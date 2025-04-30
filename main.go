@@ -22,6 +22,7 @@ func main() {
 	}
 }
 
+
 func validate(args []string) {
 	if len(args) == 0 {
 		fmt.Println("Please enter creditcard number.")
