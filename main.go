@@ -85,6 +85,3 @@ func luhnAlgorithm(number string) bool {
 	}
 	return false
 }
-
-/*
-funcminkfniso */
