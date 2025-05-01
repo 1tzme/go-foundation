@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 )
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Missing command")
+		os.Exit(0)
 	}
 
 	command := os.Args[1]
@@ -22,7 +22,7 @@ func main() {
 	}
 }
 
-
+// check if creaditcard num is valid
 func validate(args []string) {
 	if len(args) == 0 {
 		fmt.Println("Please enter creditcard number.")
@@ -30,38 +30,45 @@ func validate(args []string) {
 
 	numbers := []string{}
 	if args[0] == "--stdin" {
-		d := make([]byte, 0)
-		n, error := os.Stdin.Read(d)
+		input := make([]byte, 0)
+		n, error := os.Stdin.Read(input)
 		if error != nil {
 			fmt.Println("Can not read from stdin")
 		}
-
-		input := string(d[:n])
-		numbers = strings.Fields(input)
+		text := string(input[:n])
+		numbers = strings.Fields(text)
 	} else {
 		numbers = args
 	}
+
+	for _, number := range numbers {
+		if len(number) < 13 {
+			fmt.Println("INCORRECT")
+			continue
+		}
+		if luhnAlgorithm(number) {
+			fmt.Println("OK")
+		} else {
+			fmt.Println("INCORRECT")
+		}
+	}
 }
 
+// luhn algorithm for creaditcard num checking
 func luhnAlgorithm(number string) bool {
-	sum := 0
-	doubleDigit := false
+    sum := 0
+    isSecond := false
 
-	for i := len(number); i >= 0; i-- {
-		digit, error := strconv.Atoi(string(number[i]))
-		if error != nil {
-			return false
-		}
-		if doubleDigit {
-			digit *= 2
-			if digit > 9 {
-				digit -= 9
-			}
-		}
-		sum += digit
-		doubleDigit = !doubleDigit
-	}
+    for i := len(number) - 1; i >= 0; i-- {
+        digit := int(number[i] - '0')
+        if isSecond {
+            digit *= 2
+        }
+        sum += digit / 10
+        sum += digit % 10
 
+        isSecond = !isSecond
+    }
 	if sum%10 == 0 {
 		return true
 	}
