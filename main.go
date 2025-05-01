@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"bufio"
 	"strings"
 )
 
@@ -26,32 +27,42 @@ func main() {
 func validate(args []string) {
 	if len(args) == 0 {
 		fmt.Println("Please enter creditcard number.")
+		os.Exit(1)
 	}
 
 	numbers := []string{}
 	if args[0] == "--stdin" {
-		input := make([]byte, 0)
-		n, error := os.Stdin.Read(input)
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fields := strings.Fields(line)
+			numbers = append(numbers, fields...)
+		}
+
+		error := scanner.Err()
 		if error != nil {
 			fmt.Println("Can not read from stdin")
+			os.Exit(1)
 		}
-		text := string(input[:n])
-		numbers = strings.Fields(text)
 	} else {
 		numbers = args
 	}
-
+	exitCode := 0
 	for _, number := range numbers {
 		if len(number) < 13 {
 			fmt.Println("INCORRECT")
+			exitCode = 1
 			continue
 		}
 		if luhnAlgorithm(number) {
 			fmt.Println("OK")
+			exitCode = 0
 		} else {
 			fmt.Println("INCORRECT")
+			exitCode = 1
 		}
 	}
+	os.Exit(exitCode)
 }
 
 // luhn algorithm for creaditcard num checking
