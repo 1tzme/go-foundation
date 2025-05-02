@@ -85,3 +85,31 @@ func luhnAlgorithm(number string) bool {
 	}
 	return false
 }
+
+// generate creditcard numbers
+func generate(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Please enter creditcard number.")
+		os.Exit(1)
+	}
+
+	input := ""
+	if args[0] == "--pick"{
+		if len(args) < 2 {
+			fmt.Println("Missing card number")
+			os.Exit(1)
+		}
+		input = args[1]
+	} else {
+		input = args[0]
+	}
+
+	countStars := strings.Count(input, "*")
+	if countStars < 0 || countStars > 4 {
+		fmt.Println("Invalid format for generate.")
+		os.Exit(1)
+	}
+
+	cardNumbers := []string{}
+	
+}
