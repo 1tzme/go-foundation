@@ -18,6 +18,8 @@ func main() {
 	switch command {
 	case "validate":
 		features.Validate(args)
+	case "generate":
+		features.Generate(args)
 	default:
 		fmt.Println("Unknown comman: ", command)
 	}
