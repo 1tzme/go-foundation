@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// generate card numbers by given pattern
 func Generate(args []string) {
 	if len(args) == 0 {
 		fmt.Println("Please enter creditcard number.")
