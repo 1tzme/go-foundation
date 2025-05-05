@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"math/rand"
+	"time"
 )
 
 func Generate(args []string) {
@@ -27,12 +29,13 @@ func Generate(args []string) {
 			os.Exit(1)
 		}
 
-		pattern = args[0]
+		pattern = args[1]
 	} else {
 		if len(args) != 1 {
 			fmt.Println("Too many arguments.")
 			os.Exit(1)
 		}
+		pattern = args[0]
 	}
 
 	starsCount := strings.Count(pattern, "*")
@@ -48,4 +51,29 @@ func Generate(args []string) {
 	for i := 0; i < starsCount; i++ {
 		maxPossible *= 10
 	}
+
+	for i := 0; i < maxPossible; i++ {
+		endNumber := fmt.Sprintf("%0*d", starsCount, i)
+		cardNumber := preNumber + endNumber
+		if luhnAlgorithm(cardNumber) {
+			validCards = append(validCards, cardNumber)
+		}
+	}
+
+	if len(validCards) == 0 {
+		fmt.Println("No valid card numbers")
+		os.Exit(1)
+	}
+
+	if pick {
+		rand.Seed(time.Now().UnixNano())
+		selectedNumber := validCards[rand.Intn(len(validCards))]
+		fmt.Println(selectedNumber)
+	} else {
+		for i := 0; i < len(validCards); i++ {
+			fmt.Println(validCards[i])
+		}
+	}
+
+	os.Exit(0)
 }
