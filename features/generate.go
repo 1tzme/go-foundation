@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"honnef.co/go/tools/pattern"
 )
 
 func Generate(args []string) {
