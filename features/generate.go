@@ -44,14 +44,26 @@ func Generate(args []string) {
 		os.Exit(1)
 	}
 
+	expectedStars := strings.Repeat("*", starsCount)
+	if !strings.HasSuffix(pattern, expectedStars) {
+		fmt.Println("Stars should be only in the end")
+		os.Exit(1)
+	}
+
 	preNumber := pattern[:len(pattern)-starsCount]
-	validCards := []string{}
+	for i := 0; i < len(preNumber); i++ {
+		if preNumber[i] < '0' || preNumber[i] > '9' {
+			fmt.Println("Input should contain only numbers and stars")
+			os.Exit(1)
+		}
+	}
 
 	maxPossible := 1
 	for i := 0; i < starsCount; i++ {
 		maxPossible *= 10
 	}
 
+	validCards := []string{}
 	for i := 0; i < maxPossible; i++ {
 		endNumber := fmt.Sprintf("%0*d", starsCount, i)
 		cardNumber := preNumber + endNumber
