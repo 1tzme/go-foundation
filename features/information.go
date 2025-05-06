@@ -40,14 +40,26 @@ func Information(args []string) {
 	if stdinInput {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-
+			field := strings.Fields(scanner.Text())
+			cardNumbers = append(cardNumbers, field...)
 		}
 	}
 
 	for _, card := range cardNumbers {
 		fmt.Println(card)
 
-		
+		if len(card) < 13 || luhnAlgorithm(card) == false {
+			fmt.Println("Correct: no")
+			fmt.Println("Card Brand: -")
+			fmt.Println("Card Issuer: -")
+		} else {
+			brand := matchData(card, brands)
+			issuer := matchData(card, issuers)
+
+			fmt.Println("Correct: yes")
+			fmt.Println("Card Brand: " + brand)
+			fmt.Println("Card Issuer: " + issuer)
+		}
 	}
 }
 
@@ -71,4 +83,13 @@ func parseFile(fileName string) (map[string]string, error) {
 	}
 
 	return res, nil
+}
+
+func matchData(number string, data map[string]string) string {
+	for key, val := range data {
+		if strings.HasPrefix(number, key) {
+			return val
+		}
+	}
+	return "-"
 }
