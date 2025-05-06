@@ -20,6 +20,8 @@ func main() {
 		features.Validate(args)
 	case "generate":
 		features.Generate(args)
+	case "information":
+		features.Information(args)
 	default:
 		fmt.Println("Unknown comman: ", command)
 	}
