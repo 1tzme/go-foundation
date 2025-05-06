@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// get information about given card
 func Information(args []string) {
 	if len(args) < 2 {
 		fmt.Println("Please enter correct input for information")
@@ -85,6 +86,7 @@ func parseFile(fileName string) (map[string]string, error) {
 	return res, nil
 }
 
+// check if card number prefix matches given data
 func matchData(number string, data map[string]string) string {
 	for key, val := range data {
 		if strings.HasPrefix(number, key) {
