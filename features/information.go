@@ -1,9 +1,9 @@
 package features
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-	"bufio"
 	"strings"
 )
 

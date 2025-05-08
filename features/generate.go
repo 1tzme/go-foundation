@@ -2,9 +2,9 @@ package features
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
-	"math/rand"
 	"time"
 )
 
@@ -17,7 +17,7 @@ func Generate(args []string) {
 
 	pick := false
 	pattern := ""
-	
+
 	if args[0] == "--pick" {
 		pick = true
 
