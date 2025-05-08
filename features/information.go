@@ -51,6 +51,7 @@ func Information(args []string) {
 	}
 
 	for _, card := range cardNumbers {
+		card = strings.ReplaceAll(card, " ", "")
 		fmt.Println(card)
 
 		if len(card) < 13 || luhnAlgorithm(card) == false {

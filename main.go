@@ -9,7 +9,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Missing command")
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	command := os.Args[1]

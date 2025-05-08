@@ -24,7 +24,7 @@ func Validate(args []string) {
 		}
 
 		error := scanner.Err()
-		if error != nil {
+		if len(numbers) == 0 || error != nil {
 			fmt.Println("Can not read from stdin")
 			os.Exit(1)
 		}
@@ -32,6 +32,7 @@ func Validate(args []string) {
 		numbers = args
 	}
 	for _, number := range numbers {
+		number = strings.ReplaceAll(number, " ", "")
 		if len(number) < 13 {
 			fmt.Println("INCORRECT")
 			os.Exit(1)
