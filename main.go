@@ -22,6 +22,8 @@ func main() {
 		features.Generate(args)
 	case "information":
 		features.Information(args)
+	case "issue":
+		features.Issue(args)
 	default:
 		fmt.Println("Unknown comman: ", command)
 	}

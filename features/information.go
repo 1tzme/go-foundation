@@ -35,8 +35,12 @@ func Information(args []string) {
 		os.Exit(1)
 	}
 
-	brands, _ := parseFile(brandsFile)
-	issuers, _ := parseFile(issuersFile)
+	brands, err1 := parseFile(brandsFile)
+	issuers, err2 := parseFile(issuersFile)
+	if err1 != nil || err2 != nil {
+		fmt.Println("Error in reading files")
+		os.Exit(1)
+	}
 
 	if stdinInput {
 		scanner := bufio.NewScanner(os.Stdin)
