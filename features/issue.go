@@ -69,8 +69,7 @@ func Issue(args []string) {
 	case "AMEX":
 		cardLen = 15
 	default:
-		fmt.Println("Unsupported card length")
-		os.Exit(1)
+		cardLen = 16
 	}
 
 	base := issuerPref + brandPref
