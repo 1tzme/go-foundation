@@ -64,9 +64,9 @@ func Information(args []string) {
 	}
 }
 
-// read file and parse to map[name-of-the-kind]number-prefix
-func parseFile(fileName string) (map[string]string, error) {
-	res := make(map[string]string)
+// read file and parse to map[name-of-the-kind][]prefixes
+func parseFile(fileName string) (map[string][]string, error) {
+	res := make(map[string][]string)
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -80,17 +80,21 @@ func parseFile(fileName string) (map[string]string, error) {
 		if len(parts) != 2 {
 			continue
 		}
-		res[parts[1]] = parts[0]
+		name := parts[0]
+		prefix := parts[1]
+		res[name] = append(res[name], prefix)
 	}
 
 	return res, nil
 }
 
 // check if card number prefix matches given data
-func matchData(number string, data map[string]string) string {
-	for key, val := range data {
-		if strings.HasPrefix(number, key) {
-			return val
+func matchData(number string, data map[string][]string) string {
+	for name, prefixes := range data {
+		for _, pref := range prefixes {
+			if strings.HasPrefix(number, pref) {
+				return name
+			}
 		}
 	}
 	return "-"
