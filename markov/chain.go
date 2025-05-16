@@ -2,7 +2,6 @@ package markov
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"math/rand"
 	"strings"
@@ -21,33 +20,38 @@ func (p Prefix) Shift(word string) {
 
 type Chain struct {
 	chain map[string][]string
-
 	prefixLen int
 }
 
 func NewChain(prefixLen int) *Chain {
-	return &Chain{make(map[string][]string), prefixLen}
-}
-
-func (c *Chain) Build(r io.Reader) {
-	br := bufio.NewReader(r)
-	p := make(Prefix, c.prefixLen)
-
-	for {
-		var s string
-		if _, err := fmt.Fscan(br, &s); err != nil {
-			break
-		}
-
-		key := p.String()
-		c.chain[key] = append(c.chain[key], s)
-		p.Shift(s)
+	return &Chain {
+		chain: make(map[string][]string),
+		prefixLen: prefixLen,
 	}
 }
 
-func (c *Chain) Generate(n int) string {
+func (c *Chain) HasPrefix(p Prefix) bool {
+	_, ok := c.chain[p.String()]
+	return ok
+}
+
+func (c *Chain) Build(r io.Reader) {
+	scanner := bufio.NewScanner(r)
+	scanner.Split(bufio.ScanWords)
+	
 	p := make(Prefix, c.prefixLen)
-	var words []string
+	for scanner.Scan() {
+		word := scanner.Text()
+		key := p.String()
+		c.chain[key] = append(c.chain[key], word)
+		p.Shift(word)
+	}
+}
+
+func (c *Chain) Generate(n int, start Prefix) string {
+	words := []string{}
+	p := make(Prefix, c.prefixLen)
+	copy(p, start)
 
 	for i := 0; i < n; i++ {
 		choices := c.chain[p.String()]
