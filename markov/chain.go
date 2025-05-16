@@ -19,13 +19,13 @@ func (p Prefix) Shift(word string) {
 }
 
 type Chain struct {
-	chain map[string][]string
+	chain     map[string][]string
 	prefixLen int
 }
 
 func NewChain(prefixLen int) *Chain {
-	return &Chain {
-		chain: make(map[string][]string),
+	return &Chain{
+		chain:     make(map[string][]string),
 		prefixLen: prefixLen,
 	}
 }
@@ -38,7 +38,7 @@ func (c *Chain) HasPrefix(p Prefix) bool {
 func (c *Chain) Build(r io.Reader) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanWords)
-	
+
 	p := make(Prefix, c.prefixLen)
 	for scanner.Scan() {
 		word := scanner.Text()

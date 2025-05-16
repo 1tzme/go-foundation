@@ -2,23 +2,23 @@ package main
 
 import (
 	"fmt"
+	"markov-chain/markov"
 	"os"
 	"strings"
-	"markov-chain/markov"
 )
 
 func main() {
 	wordLimit, prefixLen, startPref := markov.ParseFlags()
 
 	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) != 0 && stat.Size() == 0 {
-		fmt.Fprintln(os.Stderr, "No input text")
+	if (stat.Mode()&os.ModeCharDevice) != 0 && stat.Size() == 0 {
+		fmt.Fprintln(os.Stderr, "Error: no input text")
 		os.Exit(1)
 	}
 
 	chain := markov.NewChain(prefixLen)
 	chain.Build(os.Stdin)
-	
+
 	start := make(markov.Prefix, prefixLen)
 	if startPref != "" {
 		words := strings.Fields(startPref)
