@@ -49,7 +49,7 @@ func (c *Chain) Build(r io.Reader) {
 }
 
 func (c *Chain) Generate(n int, start Prefix) string {
-	words := []string{}
+	words := append([]string{}, start...)
 	p := make(Prefix, c.prefixLen)
 	copy(p, start)
 

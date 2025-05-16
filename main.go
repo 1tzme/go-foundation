@@ -10,6 +10,12 @@ import (
 func main() {
 	wordLimit, prefixLen, startPref := markov.ParseFlags()
 
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) != 0 && stat.Size() == 0 {
+		fmt.Fprintln(os.Stderr, "No input text")
+		os.Exit(1)
+	}
+
 	chain := markov.NewChain(prefixLen)
 	chain.Build(os.Stdin)
 	

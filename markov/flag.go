@@ -14,6 +14,8 @@ func ParseFlags() (int, int, string) {
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
+		case "--help":
+			usage()
 		case "-w":
 			i++
 			if i >= len(args) {
@@ -52,4 +54,21 @@ func ParseFlags() (int, int, string) {
 	}
 
 	return wordLimit, prefixLen, startPref
+}
+
+func usage() {
+	fmt.Println(`
+Markov Chain text generator.
+
+Usage:
+  markovchain [-w <N>] [-p <S>] [-l <N>]
+  markovchain --help
+
+Options:
+  --help  Show this screen.
+  -w N    Number of maximum words
+  -p S    Starting prefix
+  -l N    Prefix length
+	`)
+	os.Exit(0)
 }
