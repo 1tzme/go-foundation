@@ -21,6 +21,7 @@ func (p Prefix) Shift(word string) {
 type Chain struct {
 	chain     map[string][]string
 	prefixLen int
+	size      int
 }
 
 func NewChain(prefixLen int) *Chain {
@@ -31,8 +32,16 @@ func NewChain(prefixLen int) *Chain {
 }
 
 func (c *Chain) HasPrefix(p Prefix) bool {
-	_, ok := c.chain[p.String()]
-	return ok
+	val, ok := c.chain[p.String()]
+	return ok && len(val) > 0
+}
+
+func (c *Chain) Size() int {
+	return c.size
+}
+
+func (c *Chain) Raw() map[string][]string {
+	return c.chain
 }
 
 func (c *Chain) Build(r io.Reader) {
@@ -45,6 +54,12 @@ func (c *Chain) Build(r io.Reader) {
 		key := p.String()
 		c.chain[key] = append(c.chain[key], word)
 		p.Shift(word)
+		c.size++
+	}
+
+	key := p.String()
+	if key != "" && c.chain[key] == nil {
+		c.chain[key] = []string{}
 	}
 }
 
@@ -53,7 +68,7 @@ func (c *Chain) Generate(n int, start Prefix) string {
 	p := make(Prefix, c.prefixLen)
 	copy(p, start)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < n-len(start); i++ {
 		choices := c.chain[p.String()]
 		if len(choices) == 0 {
 			break
