@@ -1,11 +1,11 @@
 package markov
 
 import (
-	"fmt"
-	"os"
 	"bufio"
+	"fmt"
 	"io"
 	"math/rand"
+	"os"
 	"strings"
 )
 
