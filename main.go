@@ -27,6 +27,10 @@ func main() {
 		fmt.Println("Not enough length to build chain")
 		os.Exit(1)
 	}
+	if wordLimit > chain.Size() {
+		fmt.Println("Word limit exceeds imput size")
+		os.Exit(1)
+	}
 
 	start := make(markov.Prefix, prefixLen)
 	if startPref != "" {

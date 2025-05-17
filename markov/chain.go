@@ -1,6 +1,8 @@
 package markov
 
 import (
+	"fmt"
+	"os"
 	"bufio"
 	"io"
 	"math/rand"
@@ -58,8 +60,13 @@ func (c *Chain) Build(r io.Reader) {
 	}
 
 	key := p.String()
-	if key != "" && c.chain[key] == nil {
+	_, exists := c.chain[key]
+	if !exists {
 		c.chain[key] = []string{}
+	}
+	err := scanner.Err()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Scanner error: ", err)
 	}
 }
 
