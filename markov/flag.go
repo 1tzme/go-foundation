@@ -1,9 +1,9 @@
 package markov
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"flag"
 )
 
 func ParseFlags() (int, int, string) {
