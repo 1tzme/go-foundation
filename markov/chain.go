@@ -42,10 +42,6 @@ func (c *Chain) Size() int {
 	return c.size
 }
 
-func (c *Chain) Raw() map[string][]string {
-	return c.chain
-}
-
 func (c *Chain) Build(r io.Reader) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanWords)

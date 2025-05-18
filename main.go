@@ -41,14 +41,8 @@ func main() {
 		}
 		copy(start, words)
 
-		raw := chain.Raw()
-		values, exists := raw[start.String()]
-		if !exists {
-			fmt.Println("Prefix not found in the text")
-			os.Exit(1)
-		}
-		if values == nil || len(values) == 0 {
-			fmt.Println("Prefix can not be continued")
+		if !chain.HasPrefix(start) {
+			fmt.Println("Prefix not found or can not be continued")
 			os.Exit(1)
 		}
 		if len(start) > wordLimit {
