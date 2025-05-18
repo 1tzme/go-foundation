@@ -75,7 +75,7 @@ func (c *Chain) Generate(n int, start Prefix) string {
 	p := make(Prefix, c.prefixLen)
 	copy(p, start)
 
-	for i := 0; i < n-len(start); i++ {
+	for i := len(start); i < n; i++ {
 		choices := c.chain[p.String()]
 		if len(choices) == 0 {
 			break

@@ -3,57 +3,30 @@ package markov
 import (
 	"fmt"
 	"os"
-	"strconv"
+	"flag"
 )
 
 func ParseFlags() (int, int, string) {
-	wordLimit := 100
-	prefixLen := 2
-	startPref := ""
+	wordLimit := flag.Int("w", 100, "Num of words to generate (1-10000)")
+	prefixLen := flag.Int("l", 2, "Prefix length (1-5)")
+	startPref := flag.String("p", "", "Starting prefix")
+	help := flag.Bool("help", false, "Show usage")
 
-	args := os.Args[1:]
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--help":
-			usage()
-		case "-w":
-			i++
-			if i >= len(args) {
-				fmt.Println("Missing value for -w")
-				os.Exit(1)
-			}
-			val, err := strconv.Atoi(args[i])
-			if err != nil || val <= 0 || val > 10000 {
-				fmt.Println("Number of words should be between 1 and 10000")
-				os.Exit(1)
-			}
-			wordLimit = val
-		case "-l":
-			i++
-			if i >= len(args) {
-				fmt.Println("Missing value for -l")
-				os.Exit(1)
-			}
-			val, err := strconv.Atoi(args[i])
-			if err != nil || val < 1 || val > 5 {
-				fmt.Println("Prefix len should be between 1 and 5")
-				os.Exit(1)
-			}
-			prefixLen = val
-		case "-p":
-			i++
-			if i >= len(args) {
-				fmt.Println("Missing value for -p")
-				os.Exit(1)
-			}
-			startPref = args[i]
-		default:
-			fmt.Println("Unknown flag: " + args[i])
-			os.Exit(1)
-		}
+	flag.Usage = usage
+	flag.Parse()
+
+	if *help {
+		flag.Usage()
 	}
-
-	return wordLimit, prefixLen, startPref
+	if *wordLimit <= 0 || *wordLimit > 10000 {
+		fmt.Println("Number of words should be between 1 and 10000")
+		os.Exit(1)
+	}
+	if *prefixLen < 1 || *prefixLen > 5 {
+		fmt.Println("Prefix len should be between 1 and 5")
+		os.Exit(1)
+	}
+	return *wordLimit, *prefixLen, *startPref
 }
 
 func usage() {
