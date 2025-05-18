@@ -19,6 +19,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error: no input text")
 		os.Exit(1)
 	}
+	if wordLimit < prefixLen {
+		fmt.Println("-w should be equal or more than prefix length")
+		os.Exit(1)
+	}
 
 	chain := markov.NewChain(prefixLen)
 	chain.Build(os.Stdin)
@@ -43,10 +47,6 @@ func main() {
 
 		if !chain.HasPrefix(start) {
 			fmt.Println("Prefix not found or can not be continued")
-			os.Exit(1)
-		}
-		if len(start) > wordLimit {
-			fmt.Println("-w should be equal or more than prefix length")
 			os.Exit(1)
 		}
 	}
