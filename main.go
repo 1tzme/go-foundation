@@ -38,7 +38,8 @@ func main() {
 
 	start := make(markov.Prefix, prefixLen)
 	if startPref != "" {
-		words := strings.Fields(startPref)
+		trimmed := strings.Join(strings.Fields(startPref), " ")
+		words := strings.Fields(trimmed)
 		if len(words) != prefixLen {
 			fmt.Println("Starting prefix len mismatch")
 			os.Exit(1)
