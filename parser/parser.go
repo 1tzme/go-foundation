@@ -2,7 +2,6 @@ package parser
 
 import (
 	"io"
-	"strings"
 )
 
 type CSVParser interface  {
@@ -41,6 +40,24 @@ func (p *MyCSVParser) ReadLine(r io.Reader) (string, error) {
 
     line := string(p.buffer)
     fields, err := parseCSVLine(line)
+    if err != nil {
+        p.fields = nil
+        return "", err
+    }
+
+    p.fields = fields
+    return line, nil
+}
+
+func (p *MyCSVParser) GetField(n int) (string, error) {
+    if n < 0 || n >= len(p.fields) {
+        return "", ErrFieldCount
+    }
+    return p.fields[n], nil
+}
+
+func (p *MyCSVParser) GetNumberOfFields() int {
+    return len(p.fields)
 }
 
 func parseCSVLine(line string) ([]string, error) {
