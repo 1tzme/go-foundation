@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"io"
+    "a-library-for-others/parser"
 )
 
 func main() {
@@ -14,7 +15,7 @@ func main() {
     }
     defer file.Close()
 
-    var csvparser CSVParser = YourCSVParser{}
+    var csvparser parser.CSVParser = MyCSVParser{}
 
     for {
         line, err := csvparser.ReadLine(file)
