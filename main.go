@@ -34,7 +34,7 @@ func main() {
                 fmt.Printf("Error getting field %d: %v\n", i, err)
                 continue
             }
-            fmt.Printf("Field %d: %s\n", i, field)
+            fmt.Printf("Field %d: %s\n", i+1, field)
         }
     }
 }

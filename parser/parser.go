@@ -29,6 +29,7 @@ func (p *MyCSVParser) ReadLine(r io.Reader) (string, error) {
             if ch == '\r' {
                 continue
             }
+            p.buffer = append(p.buffer, ch)
         }
         if err != nil {
             if err == io.EOF && len(p.buffer) > 0 {
