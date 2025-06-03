@@ -8,20 +8,42 @@ func (p *MyCSVParser) ReadLine(r io.Reader) (string, error) {
 	p.buffer = p.buffer[:0]
 	temp := [1]byte{}
 	isCR := false
+	inQuotes := false
+	quotedField := false
 
 	for {
 		n, err := r.Read(temp[:])
 		if n > 0 {
 			ch := temp[0]
+			if ch == '"' {
+				if !inQuotes {
+					inQuotes = true
+					quotedField = true
+				} else {
+					inQuotes = false
+				}
+			}
 			if ch == '\n' && isCR {
 				isCR = false
-				break
+				if !quotedField {
+					break
+				}
+				p.buffer = append(p.buffer, '\n')
+				continue
 			}
 			if ch == '\n' {
-				break
+				if !quotedField {
+					break
+				}
+				p.buffer = append(p.buffer, '\n')
+				continue
 			}
 			if ch == '\r' {
 				isCR = true
+				if !quotedField {
+					continue
+				}
+				p.buffer = append(p.buffer, '\r')
 				continue
 			}
 			p.buffer = append(p.buffer, ch)
@@ -58,14 +80,12 @@ func parseCSVLine(line string) ([]string, error) {
 	fields := []string{}
 	field := []byte{}
 	inQuotes := false
-	quotedField := false
 
 	for i := 0; i < len(line); i++ {
 		switch line[i] {
 		case '"':
 			if !inQuotes {
 				inQuotes = true
-				quotedField = true
 			} else {
 				if i+1 < len(line) && line[i+1] == '"' {
 					field = append(field, '"')
@@ -80,7 +100,6 @@ func parseCSVLine(line string) ([]string, error) {
 			} else {
 				fields = append(fields, string(trimSpace(field)))
 				field = field[:0]
-				quotedField = false
 			}
 		default:
 			if !inQuotes && len(field) == 0 && line[i] == ' ' {
@@ -92,14 +111,6 @@ func parseCSVLine(line string) ([]string, error) {
 
 	if inQuotes {
 		return nil, ErrQuote
-	}
-	if quotedField {
-		if len(field) > 0 && field[0] == '"' {
-			field = field[1:]
-		}
-		if len(field) > 0 && field[len(field)-1] == '"' {
-			field = field[:len(field)-1]
-		}
 	}
 
 	fields = append(fields, string(trimSpace(field)))
