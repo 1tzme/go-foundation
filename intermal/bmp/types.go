@@ -21,3 +21,8 @@ type DIBHeader struct {
 	ColorsUsed      uint32
 	ImportantColors uint32
 }
+
+type BMP struct {
+	Header Header
+	Image  Image
+}
