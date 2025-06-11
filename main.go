@@ -19,6 +19,7 @@ func main() {
 		b.HandleHeaderCommand()
 	case "apply":
 		t.HandleRotateCommand()
+		t.HandleApplyCommand()
 	default:
 		u.PrintUsage()
 		log.Fatalf("Error: unknown command %s", os.Args[1])
