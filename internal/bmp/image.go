@@ -6,16 +6,6 @@ import (
 	"os"
 )
 
-type Image struct {
-	Width  int
-	Height int
-	Pixels []Pixel
-}
-
-type Pixel struct {
-	B, G, R uint8
-}
-
 func ReadImage(path string) *Image {
 	file, err := os.Open(path)
 	if err != nil {

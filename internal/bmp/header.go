@@ -10,17 +10,6 @@ import (
 	u "bitmap/internal/utils"
 )
 
-type Header struct {
-	FileType       string
-	FileSize       uint32
-	HeaderSize     uint32
-	DibHeaderSize  uint32
-	WidthInPixels  int32
-	HeightInPixels int32
-	PixelSize      uint16
-	ImageSize      uint32
-}
-
 func NewHeader() *Header {
 	return &Header{}
 }
@@ -92,9 +81,9 @@ func readHeader(path string) *Header {
 	if err != nil {
 		log.Fatal("Failed to read DIB header size: ", err)
 	}
-	if header.DibHeaderSize != bitmapInfoHeaderSize {
-		log.Fatal("Unsupported DIP header size: ", header.DibHeaderSize)
-	}
+	// if header.DibHeaderSize != bitmapInfoHeaderSize {
+	// 	log.Fatal("Unsupported DIP header size: ", header.DibHeaderSize)
+	// }
 
 	err = binary.Read(file, binary.LittleEndian, &header.WidthInPixels)
 	if err != nil {
