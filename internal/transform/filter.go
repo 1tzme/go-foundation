@@ -21,9 +21,9 @@ func applyFilters(image *bm.Image, filters []string) {
 		case "negative":
 			applyNegativeFilter(image)
 		case "pixelate":
-			applyPixelateFilter(image, 10)
+			applyPixelateFilter(image, 20)
 		case "blur":
-			applyBlurFilter(image, 3)
+			applyBlurFilter(image, 30)
 		}
 	}
 }
