@@ -23,6 +23,7 @@ func main() {
 		}
 	default:
 		u.PrintUsage()
+
 		log.Fatalf("Unknown command: %s", os.Args[1])
 	}
 }

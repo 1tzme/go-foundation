@@ -66,7 +66,7 @@ func HandleApplyCommand() error {
 	}
 
 	if len(rotates) > 0 {
-		bmp.Image = *applyRotations(&bmp.Image, rotates)
+		bmp.Image = *applyRotations(bmp.Image, rotates)
 		bmp.Header.WidthInPixels = int32(bmp.Image.Width)
 		bmp.Header.HeightInPixels = int32(bmp.Image.Height)
 	}

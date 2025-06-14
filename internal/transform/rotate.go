@@ -1,13 +1,13 @@
 package transform
 
 import (
+	"bitmap/internal/bmp"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	b "bitmap/internal/bmp"
 	u "bitmap/internal/utils"
 )
 
@@ -33,9 +33,17 @@ func HandleRotateCommand() {
 	}
 
 	sourceFile, outputFile := rotateFlag.Args()[0], rotateFlag.Args()[1]
-	img := b.ReadImage(sourceFile)
+	header := bmp.ReadHeader(sourceFile)
+
+	file, err := os.Open(sourceFile)
+	if err != nil {
+		log.Fatalln("Failer to open file: ", err)
+	}
+	defer file.Close()
+
+	img := bmp.ReadImage(file, *header)
 	rotatedImg := applyRotations(img, rotates)
-	b.SaveImage(rotatedImg, outputFile)
+	bmp.SaveImage(rotatedImg, outputFile)
 }
 
 func isValidRotation(option string) bool {
@@ -46,8 +54,8 @@ func isValidRotation(option string) bool {
 	return validOptions[strings.ToLower(option)]
 }
 
-func applyRotations(img *b.Image, rotations []string) *b.Image {
-	result := img
+func applyRotations(img bmp.Image, rotations []string) *bmp.Image {
+	result := &img
 	for _, rot := range rotations {
 		angle := normalizeRotation(rot)
 		result = rotateImage(result, angle)
@@ -72,11 +80,11 @@ func normalizeRotation(rot string) int {
 	}
 }
 
-func rotateImage(img *b.Image, angle int) *b.Image {
+func rotateImage(img *bmp.Image, angle int) *bmp.Image {
 	angle = (angle%360 + 360) % 360 // Нормализация угла
 	width, height := img.Width, img.Height
 	var newWidth, newHeight int
-	var newPixels []b.Pixel
+	var newPixels []bmp.Pixel
 
 	switch angle {
 	case 90, 270:
@@ -85,7 +93,7 @@ func rotateImage(img *b.Image, angle int) *b.Image {
 		newWidth, newHeight = width, height
 	}
 
-	newPixels = make([]b.Pixel, newWidth*newHeight)
+	newPixels = make([]bmp.Pixel, newWidth*newHeight)
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
@@ -106,7 +114,7 @@ func rotateImage(img *b.Image, angle int) *b.Image {
 		}
 	}
 
-	return &b.Image{
+	return &bmp.Image{
 		Width:  newWidth,
 		Height: newHeight,
 		Pixels: newPixels,
