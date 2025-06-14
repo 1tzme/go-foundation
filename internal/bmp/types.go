@@ -26,6 +26,10 @@ type Header struct {
 	ImageSize      uint32
 }
 
+func NewHeader() *Header {
+	return &Header{}
+}
+
 const (
 	bitmapFileHeaderSize = 14
 	bitmapInfoHeaderSize = 40
