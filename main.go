@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	b "bitmap/intermal/bmp"
-	t "bitmap/intermal/transform"
-	u "bitmap/intermal/utils"
+	b "bitmap/internal/bmp"
+	t "bitmap/internal/transform"
+	u "bitmap/internal/utils"
 )
 
 func main() {

@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	u "bitmap/intermal/utils"
+	u "bitmap/internal/utils"
 )
 
 type Header struct {

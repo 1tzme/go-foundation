@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	b "bitmap/intermal/bmp"
-	u "bitmap/intermal/utils"
+	b "bitmap/internal/bmp"
+	u "bitmap/internal/utils"
 )
 
 func HandleRotateCommand() {
