@@ -24,17 +24,9 @@ Description:
 func PrintApplyUsage() {
 	fmt.Println(`$ ./bitmap apply --help
 Usage:
-<<<<<<< HEAD
-  bitmap apply [options] <source_file> <output_file>
-
-The options are:
-  -h, --help      prints program usage information
-  ...`)
-=======
 bitmap apply [options] <source_file> <output_file>
 
 The options are:
 -h, --help              prints program usage information
 --filter=<filter_type>  applies a filter to the image (blue, red, green, grayscale, negative, pixelate, blur)`)
->>>>>>> filter+rotate
 }
