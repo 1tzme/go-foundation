@@ -6,43 +6,6 @@ import (
 	"os"
 )
 
-type Image struct {
-	Width  int
-	Height int
-	Pixels []Pixel
-}
-
-type Pixel struct {
-	B, G, R uint8
-}
-
-func ReadImage(path string) *Image {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("Failed to open file: %v", err)
-	}
-	defer file.Close()
-
-	header := readHeader(path)
-	file.Seek(int64(header.HeaderSize+header.DibHeaderSize), 0)
-
-	pixels := make([]Pixel, header.WidthInPixels*header.HeightInPixels)
-	for i := range pixels {
-		var pixel Pixel
-		err = binary.Read(file, binary.LittleEndian, &pixel)
-		if err != nil {
-			log.Fatalf("Failed to read pixel data: %v", err)
-		}
-		pixels[i] = pixel
-	}
-
-	return &Image{
-		Width:  int(header.WidthInPixels),
-		Height: int(header.HeightInPixels),
-		Pixels: pixels,
-	}
-}
-
 func SaveImage(img *Image, path string) {
 	file, err := os.Create(path)
 	if err != nil {

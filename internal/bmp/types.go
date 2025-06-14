@@ -1,5 +1,40 @@
 package bmp
 
+type BMP struct {
+	Header Header
+	Image  Image
+}
+
+type Image struct {
+	Width  int
+	Height int
+	Pixels []Pixel
+}
+
+type Pixel struct {
+	B, G, R uint8
+}
+
+type Header struct {
+	FileType       string
+	FileSize       uint32
+	HeaderSize     uint32
+	DibHeaderSize  uint32
+	WidthInPixels  int32
+	HeightInPixels int32
+	PixelSize      uint16
+	ImageSize      uint32
+}
+
+func NewHeader() *Header {
+	return &Header{}
+}
+
+const (
+	bitmapFileHeaderSize = 14
+	bitmapInfoHeaderSize = 40
+)
+
 type BitmapFileHeader struct {
 	FileType        [2]byte
 	FileSize        uint32
@@ -20,9 +55,4 @@ type DIBHeader struct {
 	YPixelsPerMeter int32
 	ColorsUsed      uint32
 	ImportantColors uint32
-}
-
-type BMP struct {
-	Header Header
-	Image  Image
 }

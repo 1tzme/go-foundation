@@ -1,33 +1,12 @@
 package bmp
 
 import (
+	u "bitmap/internal/utils"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
 	"os"
-
-	u "bitmap/internal/utils"
-)
-
-type Header struct {
-	FileType       string
-	FileSize       uint32
-	HeaderSize     uint32
-	DibHeaderSize  uint32
-	WidthInPixels  int32
-	HeightInPixels int32
-	PixelSize      uint16
-	ImageSize      uint32
-}
-
-func NewHeader() *Header {
-	return &Header{}
-}
-
-const (
-	bitmapFileHeaderSize = 14
-	bitmapInfoHeaderSize = 40
 )
 
 func HandleHeaderCommand() {
@@ -44,7 +23,7 @@ func HandleHeaderCommand() {
 }
 
 func printHeader(path string) {
-	header := readHeader(path)
+	header := ReadHeader(path)
 
 	fmt.Println("BMP Header:")
 	fmt.Printf("- FileType %s\n", header.FileType)
@@ -58,7 +37,7 @@ func printHeader(path string) {
 	fmt.Printf("- ImageSizeInBytes %d\n", header.ImageSize)
 }
 
-func readHeader(path string) *Header {
+func ReadHeader(path string) *Header {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatalln("Failer to open file: ", err)
@@ -91,9 +70,6 @@ func readHeader(path string) *Header {
 	err = binary.Read(file, binary.LittleEndian, &header.DibHeaderSize)
 	if err != nil {
 		log.Fatal("Failed to read DIB header size: ", err)
-	}
-	if header.DibHeaderSize != bitmapInfoHeaderSize {
-		log.Fatal("Unsupported DIP header size: ", header.DibHeaderSize)
 	}
 
 	err = binary.Read(file, binary.LittleEndian, &header.WidthInPixels)
@@ -135,4 +111,52 @@ func readHeader(path string) *Header {
 	}
 
 	return header
+}
+
+func readHeader(file *os.File) (*Header, error) {
+	header := &Header{HeaderSize: bitmapFileHeaderSize}
+
+	fileType := make([]byte, 2)
+	if _, err := file.Read(fileType); err != nil {
+		return nil, fmt.Errorf("failed to read file type: %v", err)
+	}
+	header.FileType = string(fileType)
+	if header.FileType != "BM" {
+		return nil, fmt.Errorf("not a valid BMP file")
+	}
+
+	if err := binary.Read(file, binary.LittleEndian, &header.FileSize); err != nil {
+		return nil, fmt.Errorf("failed to read file size: %v", err)
+	}
+	if _, err := file.Seek(8, 1); err != nil {
+		return nil, fmt.Errorf("failed to seek reserved and offset: %v", err)
+	}
+	if err := binary.Read(file, binary.LittleEndian, &header.DibHeaderSize); err != nil {
+		return nil, fmt.Errorf("failed to read dib header size: %v", err)
+	}
+	if err := binary.Read(file, binary.LittleEndian, &header.WidthInPixels); err != nil {
+		return nil, fmt.Errorf("failed to read width: %v", err)
+	}
+	if err := binary.Read(file, binary.LittleEndian, &header.HeightInPixels); err != nil {
+		return nil, fmt.Errorf("failed to read height: %v", err)
+	}
+	if _, err := file.Seek(2, 1); err != nil {
+		return nil, fmt.Errorf("failed to seek planes: %v", err)
+	}
+	if err := binary.Read(file, binary.LittleEndian, &header.PixelSize); err != nil {
+		return nil, fmt.Errorf("failed to read pixel size: %v", err)
+	}
+
+	if header.PixelSize != 24 {
+		return nil, fmt.Errorf("only 24-bit BMP files are supported")
+	}
+
+	if _, err := file.Seek(4, 1); err != nil {
+		return nil, fmt.Errorf("failed to seek compression: %v", err)
+	}
+	if err := binary.Read(file, binary.LittleEndian, &header.ImageSize); err != nil {
+		return nil, fmt.Errorf("failed to read image size: %v", err)
+	}
+
+	return header, nil
 }

@@ -12,15 +12,18 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		u.PrintUsage()
-		log.Fatal("Error: no command")
+		os.Exit(1)
 	}
 	switch os.Args[1] {
 	case "header":
 		b.HandleHeaderCommand()
 	case "apply":
-		t.HandleRotateCommand()
+		if err := t.HandleApplyCommand(); err != nil {
+			log.Fatalf("Apply command failed: %v", err)
+		}
 	default:
 		u.PrintUsage()
-		log.Fatalf("Error: unknown command %s", os.Args[1])
+
+		log.Fatalf("Unknown command: %s", os.Args[1])
 	}
 }
