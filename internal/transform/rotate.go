@@ -66,14 +66,14 @@ func applyRotations(img bmp.Image, rotations []string) *bmp.Image {
 func normalizeRotation(rot string) int {
 	rot = strings.ToLower(rot)
 	switch rot {
-	case "right", "90":
-		return 90
-	case "left", "-90":
+	case "right", "90", "-270":
 		return -90
+	case "left", "-90", "270":
+		return 90
 	case "180", "-180":
 		return 180
-	case "270", "-270":
-		return 270
+	// case "270", "-270":
+	// 	return 270
 	default:
 		log.Fatalf("Invalid rotation: %s", rot)
 		return 0
