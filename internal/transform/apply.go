@@ -15,8 +15,11 @@ func HandleApplyCommand() error {
 	fs := flag.NewFlagSet("apply", flag.ContinueOnError)
 	var filters flagSlice
 	var rotates []string
+	var mirrors flagSlice
+
 
 	fs.Var(&filters, "filter", "Filter to apply (blue, red, green, grayscale, negative, pixelate, blur)")
+	fs.Var(&mirrors, "mirror", "Mirror direction: horizontal, vertical")
 	fs.Func("rotate", "Rotate direction: right, 90, 180, 270, left, -90, -180, -270", func(s string) error {
 		s = strings.ToLower(s)
 		if !isValidRotation(s) {
@@ -37,7 +40,7 @@ func HandleApplyCommand() error {
 		return fmt.Errorf("expected source and output files")
 	}
 
-	if len(filters) == 0 && len(rotates) == 0 {
+	if len(filters) == 0 && len(rotates) == 0 && len(mirrors) == 0 {
 		u.PrintApplyUsage()
 		return fmt.Errorf("no filters or rotations specified")
 	}
@@ -64,6 +67,13 @@ func HandleApplyCommand() error {
 	if err != nil {
 		return fmt.Errorf("failed to read BMP: %v", err)
 	}
+
+	if len(mirrors) > 0 {
+		if err := ApplyMirrors(&bmp.Image, mirrors); err != nil {
+			return fmt.Errorf("failed to apply mirrors: %v", err)
+		}
+	}
+	
 
 	if len(rotates) > 0 {
 		bmp.Image = *applyRotations(bmp.Image, rotates)
