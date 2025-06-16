@@ -217,20 +217,3 @@ func writeImage(file *os.File, image *Image, header Header) error {
 	}
 	return nil
 }
-
-// package bmp
-
-// type BMP struct {
-// 	Header Header
-// 	Image Image
-// }
-
-// type Image struct {
-// 	Width int
-// 	Height int
-// 	Pixels []Pixel
-// }
-
-// type Pixel struct {
-// 	B, G, R uint8
-// }
