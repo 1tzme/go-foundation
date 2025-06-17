@@ -122,8 +122,8 @@ Operations are applied sequentially in the order specified:
 ```
 ### Contributors
 
-	- [armakhat](https://platform.alem.school/git/armakhat)  
-	- [zazholdas](https://platform.alem.school/git/zazholdas)  
-	- [zaaripzha](https://platform.alem.school/git/zaaripzha)  
-	- [datussupo](https://platform.alem.school/git/datussupo)  
-	- [nuarystan](https://platform.alem.school/git/nuarystan)  
+- [armakhat](https://platform.alem.school/git/armakhat)  
+- [zazholdas](https://platform.alem.school/git/zazholdas)  
+- [zaaripzha](https://platform.alem.school/git/zaaripzha)  
+- [datussupo](https://platform.alem.school/git/datussupo)  
+- [nuarystan](https://platform.alem.school/git/nuarystan)  
