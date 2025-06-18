@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	b "bitmap/internal/bmp"
@@ -19,11 +19,12 @@ func main() {
 		b.HandleHeaderCommand()
 	case "apply":
 		if err := t.HandleApplyCommand(); err != nil {
-			log.Fatalf("Apply command failed: %v", err)
+			fmt.Fprintf(os.Stderr, "Apply command failed: %v\n", err)
+			os.Exit(1)
 		}
 	default:
 		u.PrintUsage()
-
-		log.Fatalf("Unknown command: %s", os.Args[1])
+		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
+		os.Exit(1)
 	}
 }

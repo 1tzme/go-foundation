@@ -1,7 +1,9 @@
 package transform
 
 import (
+	"fmt"
 	"math"
+	"os"
 
 	bm "bitmap/internal/bmp"
 )
@@ -21,9 +23,9 @@ func applyFilters(image *bm.Image, filters []string) {
 		case "negative":
 			applyNegativeFilter(image)
 		case "pixelate":
-			applyPixelateFilter(image, -20)
+			applyPixelateFilter(image, 20)
 		case "blur":
-			applyBlurFilter(image, 30)
+			applyBlurFilter(image, 20)
 		}
 	}
 }
@@ -73,7 +75,10 @@ func applyNegativeFilter(image *bm.Image) {
 
 // applyPixelateFilter applies pixelation effect
 func applyPixelateFilter(image *bm.Image, blockSize int) {
-	if blockSize <= 0 {
+	if blockSize < 0 {
+		fmt.Fprintf(os.Stderr, "Block size cannot be negative: %v\n", blockSize)
+		os.Exit(1)
+	} else if blockSize == 0 {
 		return
 	}
 	for y := 0; y < image.Height; y += blockSize {
@@ -111,6 +116,10 @@ func setBlockColor(image *bm.Image, x, y, blockSize int, avgR, avgG, avgB uint8)
 
 // applyBlurFilter applies blur effect with specified kernel size
 func applyBlurFilter(image *bm.Image, kernelSize int) {
+	if kernelSize < 0 {
+		fmt.Fprintf(os.Stderr, "Kernel Size cannot be negative: %v\n", kernelSize)
+		os.Exit(1)
+	}
 	if kernelSize%2 == 0 {
 		kernelSize++ // Ensure odd kernel size
 	}

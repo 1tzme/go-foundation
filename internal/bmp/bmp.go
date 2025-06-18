@@ -31,7 +31,8 @@ func readImage(file *os.File, header Header) Image {
 
 	_, err := file.Seek(int64(header.HeaderSize+header.DibHeaderSize), io.SeekStart)
 	if err != nil {
-		panic(fmt.Errorf("failed to seek to image data: %v", err))
+		fmt.Fprintf(os.Stderr, "failed to seek to image data: %v\n", err)
+		os.Exit(1)
 	}
 
 	rowSize := ((int(header.PixelSize)*width + 31) / 32) * 4
@@ -45,7 +46,8 @@ func readImage(file *os.File, header Header) Image {
 	for y := height - 1; y >= 0; y-- {
 		_, err := file.Read(pixelData)
 		if err != nil {
-			panic(fmt.Errorf("failed to read pixel data: %v", err))
+			fmt.Fprintf(os.Stderr, "failed to read pixel data: %v\n", err)
+			os.Exit(1)
 		}
 		for x := 0; x < width; x++ {
 			idx := x * 3
@@ -84,7 +86,8 @@ func ReadImage(file *os.File, header Header) Image {
 
 	_, err := file.Seek(int64(header.HeaderSize+header.DibHeaderSize), io.SeekStart)
 	if err != nil {
-		panic(fmt.Errorf("failed to seek to image data: %v", err))
+		fmt.Fprintf(os.Stderr, "failed to seek to image data: %v\n", err)
+		os.Exit(1)
 	}
 
 	rowSize := ((int(header.PixelSize)*width + 31) / 32) * 4
@@ -98,7 +101,8 @@ func ReadImage(file *os.File, header Header) Image {
 	for y := height - 1; y >= 0; y-- {
 		_, err := file.Read(pixelData)
 		if err != nil {
-			panic(fmt.Errorf("failed to read pixel data: %v", err))
+			fmt.Fprintf(os.Stderr, "failed to read pixel data: %v\n", err)
+			os.Exit(1)
 		}
 		for x := 0; x < width; x++ {
 			idx := x * 3
