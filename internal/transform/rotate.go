@@ -73,7 +73,7 @@ func normalizeRotation(rot string) int {
 	case "180", "-180":
 		return 180
 	case "270":
-		return 270 
+		return 270
 	case "-270":
 		return -270
 	default:
