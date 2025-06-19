@@ -66,14 +66,16 @@ func applyRotations(img bmp.Image, rotations []string) *bmp.Image {
 func normalizeRotation(rot string) int {
 	rot = strings.ToLower(rot)
 	switch rot {
-	case "right", "90", "-270":
-		return -90
-	case "left", "-90", "270":
+	case "right", "90":
 		return 90
+	case "left", "-90":
+		return -90
 	case "180", "-180":
 		return 180
-	// case "270", "-270":
-	// 	return 270
+	case "270":
+		return 270 
+	case "-270":
+		return -270
 	default:
 		log.Fatalf("Invalid rotation: %s", rot)
 		return 0
@@ -101,13 +103,17 @@ func rotateImage(img *bmp.Image, angle int) *bmp.Image {
 			var newX, newY int
 			switch angle {
 			case 90:
-				newX, newY = y, newHeight-1-x
+				newX = height - 1 - y
+				newY = x
 			case 180:
-				newX, newY = newWidth-1-x, newHeight-1-y
+				newX = width - 1 - x
+				newY = height - 1 - y
 			case 270:
-				newX, newY = newWidth-1-y, x
+				newX = y
+				newY = width - 1 - x
 			default: // 0 градусов
-				newX, newY = x, y
+				newX = x
+				newY = y
 			}
 			newIdx := newY*newWidth + newX
 			newPixels[newIdx] = img.Pixels[idx]

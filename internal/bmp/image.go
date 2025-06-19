@@ -40,7 +40,15 @@ func SaveImage(img *Image, path string) {
 	binary.Write(file, binary.LittleEndian, uint32(0)) // Colors used
 	binary.Write(file, binary.LittleEndian, uint32(0)) // Important colors
 
-	for _, pixel := range img.Pixels {
-		binary.Write(file, binary.LittleEndian, pixel)
+	width := img.Width
+	height := img.Height
+
+	for y := height - 1; y >= 0; y-- {
+		start := y * width
+		end := start + width
+		for _, pixel := range img.Pixels[start:end] {
+			binary.Write(file, binary.LittleEndian, pixel)
+		}
 	}
+
 }
