@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+	"strings"
 
 	b "bitmap/internal/bmp"
 	t "bitmap/internal/transform"
@@ -12,19 +13,36 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		u.PrintUsage()
-		os.Exit(1)
+		log.Fatal("Error: no command")
 	}
 	switch os.Args[1] {
 	case "header":
 		b.HandleHeaderCommand()
 	case "apply":
-		if err := t.HandleApplyCommand(); err != nil {
-			fmt.Fprintf(os.Stderr, "Apply command failed: %v\n", err)
-			os.Exit(1)
+		hasRotate := false
+		hasCrop := false
+		for _, arg := range os.Args[2:] {
+			if strings.HasPrefix(arg, "--rotate") {
+				hasRotate = true
+			}
+			if strings.HasPrefix(arg, "--crop") {
+				hasCrop = true
+			}
+		}
+
+		if hasRotate && hasCrop {
+			u.PrintApplyUsage()
+			log.Fatal("Error: cannot combine --rotate and --crop")
+		} else if hasRotate {
+			t.HandleRotateCommand()
+		} else if hasCrop {
+			t.HandleCropCommand()
+		} else {
+			u.PrintApplyUsage()
+			log.Fatal("Error: must specify --rotate or --crop")
 		}
 	default:
 		u.PrintUsage()
-		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
-		os.Exit(1)
+		log.Fatalf("Error: unknown command %s", os.Args[1])
 	}
 }
