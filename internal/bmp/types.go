@@ -35,14 +35,6 @@ const (
 	bitmapInfoHeaderSize = 40
 )
 
-type BitmapFileHeader struct {
-	FileType        [2]byte
-	FileSize        uint32
-	Reserved1       uint16
-	Reserved2       uint16
-	PixelDataOffset uint32
-}
-
 type DIBHeader struct {
 	HeaderSize      uint32
 	Width           int32

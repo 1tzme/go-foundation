@@ -50,5 +50,4 @@ func SaveImage(img *Image, path string) {
 			binary.Write(file, binary.LittleEndian, pixel)
 		}
 	}
-
 }
