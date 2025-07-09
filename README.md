@@ -4,6 +4,23 @@
 
 Hot Coffee is a coffee shop management system built with Go using a three-layered architecture pattern. The application provides HTTP endpoints for managing orders, menu items, and inventory with data persistence in JSON files.
 
+## Commit Message Format
+
+```
+<type>(optional-scope): <description>
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix  
+- `docs`: Documentation only changes
+- `style`: Code style changes (formatting, missing semi)
+- `refactor`: Code change that isn't a feature or bug fix
+- `perf`: Performance improvement
+- `test`: Adding or updating tests
+- `chore`: Misc tasks (build process, config, deps)
+
+
 ## Architecture Overview
 
 The project follows a three-layered architecture pattern:
@@ -508,7 +525,6 @@ This approach ensures:
 - **Testability**: Logger can be mocked for unit tests
 - **Maintainability**: Centralized logging configuration
 - **Performance**: Appropriate log levels for different environments
-````markdown
 ## Aggregations
 
 ### Sales Aggregations
@@ -598,6 +614,7 @@ Options:
 - Test error conditions
 - Implement integration tests
 
-```
+## Development
+````markdown
 This documentation provides a comprehensive guide for understanding, developing, and maintaining the Hot Coffee application using the three-layered architecture pattern.
 ````
