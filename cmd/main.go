@@ -1,17 +1,61 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"hot-coffee/pkg/logger"
 )
 
+// loadEnvFile loads environment variables from .env file
+func loadEnvFile(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		// .env file is optional, so we don't error if it doesn't exist
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// Split key=value
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		// Only set if not already set in environment
+		if os.Getenv(key) == "" {
+			os.Setenv(key, value)
+		}
+	}
+
+	return scanner.Err()
+}
+
 func main() {
+	// Load .env file if it exists
+	if err := loadEnvFile(".env"); err != nil {
+		// Log error but continue - .env is optional
+		println("Warning: failed to load .env file:", err.Error())
+	}
+
 	// Initialize logger
 	loggerConfig := logger.Config{
 		Level:         getLogLevel(),

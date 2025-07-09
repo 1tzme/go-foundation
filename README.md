@@ -244,11 +244,37 @@ Data is persisted in JSON files located in the `data/` directory:
 
 ### Environment Variables
 
+The application can be configured using environment variables. You can set these in your environment or create a `.env` file in the project root.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `HOST` | `localhost` | HTTP server host address |
 | `PORT` | `8080` | HTTP server port |
+| `LOG_LEVEL` | `info` | Logging level (`debug`, `info`, `warn`, `error`) |
+| `LOG_FORMAT` | `json` | Log format (`json`, `text`, `console`) |
+| `LOG_OUTPUT` | `stdout` | Log output (`stdout`, `stderr`, or file path) |
+| `LOG_ENABLE_CALLER` | `true` | Include file and line info in logs |
+| `LOG_ENABLE_COLORS` | `false` | Enable colored output for console format |
+| `ENVIRONMENT` | `development` | Application environment |
 | `DATA_DIR` | `./data` | Data storage directory |
-| `LOG_LEVEL` | `info` | Logging level |
+
+### Environment File Setup
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` with your preferred settings:
+```bash
+# Example .env file
+HOST=localhost
+PORT=8080
+LOG_LEVEL=debug
+LOG_FORMAT=text
+LOG_ENABLE_COLORS=true
+ENVIRONMENT=development
+```
 
 ### Server Configuration
 
