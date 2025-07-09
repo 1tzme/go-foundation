@@ -286,32 +286,229 @@ The application uses Go's `log/slog` package for structured logging:
 }
 ```
 
-## Error Handling
+## Logging Architecture
 
-### HTTP Status Codes
+### Logger Placement Strategy
 
-- `200 OK` - Successful operation
-- `201 Created` - Resource created successfully
-- `400 Bad Request` - Invalid input data
-- `404 Not Found` - Resource not found
-- `409 Conflict` - Business rule violation
-- `500 Internal Server Error` - Server error
+The logger should be properly positioned across all layers of the application following dependency injection principles:
 
-### Error Response Format
+#### 1. Centralized Logger Configuration (`pkg/logger/`)
 
-```json
-{
-  "error": {
-    "code": "INVALID_INPUT",
-    "message": "Order must contain at least one item",
-    "details": {
-      "field": "items",
-      "value": "[]"
-    }
-  }
+Create a centralized logger package that provides:
+- Logger configuration and initialization
+- Structured logging setup with slog
+- Environment-based log level configuration
+- Consistent log formatting across the application
+
+```go
+// pkg/logger/logger.go
+package logger
+
+import (
+    "log/slog"
+    "os"
+)
+
+type Logger struct {
+    *slog.Logger
+}
+
+func New(config Config) *Logger {
+    // Logger initialization logic
 }
 ```
 
+#### 2. Application Bootstrap (`cmd/main.go`)
+
+Initialize the logger at the application entry point and inject it into all layers:
+
+```go
+// cmd/main.go
+func main() {
+    // Initialize logger
+    loggerConfig := logger.Config{
+        Level:  getEnv("LOG_LEVEL", "info"),
+        Format: getEnv("LOG_FORMAT", "json"),
+    }
+    appLogger := logger.New(loggerConfig)
+    
+    // Inject logger into repositories
+    orderRepo := dal.NewOrderRepository(appLogger)
+    
+    // Inject logger into services  
+    orderService := service.NewOrderService(orderRepo, appLogger)
+    
+    // Inject logger into handlers
+    orderHandler := handler.NewOrderHandler(orderService, appLogger)
+}
+```
+
+#### 3. Data Access Layer (`internal/dal/`)
+
+Repositories should accept logger via constructor and log:
+- Data operations (create, read, update, delete)
+- File I/O operations
+- Error conditions
+- Performance metrics
+
+```go
+// internal/dal/order_repository.go
+type OrderRepository struct {
+    orders map[string]*models.Order
+    mutex  sync.RWMutex
+    logger *logger.Logger  // Injected logger
+}
+
+func NewOrderRepository(logger *logger.Logger) *OrderRepository {
+    return &OrderRepository{
+        orders: make(map[string]*models.Order),
+        logger: logger.WithContext("component", "order_repository"),
+    }
+}
+
+func (r *OrderRepository) Create(order *models.Order) error {
+    r.logger.Info("Creating order", "order_id", order.ID)
+    // ... implementation
+    r.logger.Info("Order created successfully", "order_id", order.ID)
+}
+```
+
+#### 4. Business Logic Layer (`internal/service/`)
+
+Services should log:
+- Business logic operations
+- Validation failures
+- Business rule violations
+- Important state changes
+
+```go
+// internal/service/order_service.go
+type OrderService struct {
+    orderRepo     *dal.OrderRepository
+    inventoryRepo *dal.InventoryRepository
+    logger        *logger.Logger  // Injected logger
+}
+
+func NewOrderService(orderRepo *dal.OrderRepository, logger *logger.Logger) *OrderService {
+    return &OrderService{
+        orderRepo: orderRepo,
+        logger:    logger.WithContext("component", "order_service"),
+    }
+}
+
+func (s *OrderService) CreateOrder(req CreateOrderRequest) (*models.Order, error) {
+    s.logger.Info("Processing order creation", "customer_id", req.CustomerID)
+    // ... business logic
+    s.logger.Info("Order processed successfully", "order_id", order.ID)
+}
+```
+
+#### 5. Presentation Layer (`internal/handler/`)
+
+Handlers should log:
+- HTTP requests and responses
+- Input validation errors
+- HTTP status codes returned
+- Request processing time
+
+```go
+// internal/handler/order_handler.go
+type OrderHandler struct {
+    orderService *service.OrderService
+    logger       *logger.Logger  // Injected logger
+}
+
+func NewOrderHandler(orderService *service.OrderService, logger *logger.Logger) *OrderHandler {
+    return &OrderHandler{
+        orderService: orderService,
+        logger:       logger.WithContext("component", "order_handler"),
+    }
+}
+
+func (h *OrderHandler) CreateOrder(c *gin.Context) {
+    h.logger.Info("Received order creation request", "method", c.Request.Method, "path", c.Request.URL.Path)
+    // ... handler logic
+}
+```
+
+### Logger Best Practices
+
+#### 1. **Dependency Injection**
+- Pass logger as a constructor parameter to all components
+- Don't use global logger instances in business logic
+- Create logger context for each component
+
+#### 2. **Structured Logging**
+- Use key-value pairs for log context
+- Include relevant IDs (order_id, customer_id, etc.)
+- Add component context to identify log source
+
+#### 3. **Log Levels**
+- **DEBUG**: Detailed debugging information
+- **INFO**: General application flow
+- **WARN**: Potentially harmful situations
+- **ERROR**: Error events that don't stop the application
+
+#### 4. **Context Enrichment**
+```go
+// Add context to logger for better traceability
+logger := baseLogger.WithContext(
+    "component", "order_service",
+    "version", "1.0.0",
+    "environment", "production",
+)
+```
+
+#### 5. **Request Tracing**
+```go
+// Add request ID for request tracing
+func (h *OrderHandler) CreateOrder(c *gin.Context) {
+    requestID := c.GetHeader("X-Request-ID")
+    logger := h.logger.WithContext("request_id", requestID)
+    
+    logger.Info("Processing order creation request")
+    // ... rest of handler
+}
+```
+
+#### 6. **Error Logging**
+```go
+// Log errors with full context
+if err := h.orderService.CreateOrder(req); err != nil {
+    h.logger.Error("Failed to create order",
+        "error", err,
+        "customer_id", req.CustomerID,
+        "item_count", len(req.Items),
+    )
+    return
+}
+```
+
+### Logger Configuration
+
+The logger configuration should be environment-specific:
+
+```go
+// Development
+logger.Config{
+    Level:  "debug",
+    Format: "text",
+}
+
+// Production
+logger.Config{
+    Level:  "info", 
+    Format: "json",
+}
+```
+
+This approach ensures:
+- **Consistency**: All components use the same logging format
+- **Traceability**: Logs can be traced through the entire request lifecycle
+- **Testability**: Logger can be mocked for unit tests
+- **Maintainability**: Centralized logging configuration
+- **Performance**: Appropriate log levels for different environments
+````markdown
 ## Aggregations
 
 ### Sales Aggregations
@@ -403,4 +600,4 @@ Options:
 
 ```
 This documentation provides a comprehensive guide for understanding, developing, and maintaining the Hot Coffee application using the three-layered architecture pattern.
-```
+````
