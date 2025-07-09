@@ -17,8 +17,10 @@ import (
 func loadEnvFile(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		// .env file is optional, so we don't error if it doesn't exist
-		return nil
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
 	}
 	defer file.Close()
 
@@ -26,12 +28,10 @@ func loadEnvFile(filename string) error {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		// Split key=value
 		parts := strings.SplitN(line, "=", 2)
 		if len(parts) != 2 {
 			continue
@@ -40,7 +40,6 @@ func loadEnvFile(filename string) error {
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
 
-		// Only set if not already set in environment
 		if os.Getenv(key) == "" {
 			os.Setenv(key, value)
 		}
@@ -50,13 +49,8 @@ func loadEnvFile(filename string) error {
 }
 
 func main() {
-	// Load .env file if it exists
-	if err := loadEnvFile(".env"); err != nil {
-		// Log error but continue - .env is optional
-		println("Warning: failed to load .env file:", err.Error())
-	}
+	envErr := loadEnvFile(".env")
 
-	// Initialize logger
 	loggerConfig := logger.Config{
 		Level:         getLogLevel(),
 		Format:        getEnv("LOG_FORMAT", "json"),
@@ -69,6 +63,13 @@ func main() {
 	}
 
 	appLogger := logger.New(loggerConfig)
+
+	if envErr != nil {
+		appLogger.Warn("Failed to load .env file", "error", envErr)
+	} else {
+		appLogger.Debug(".env file loaded successfully")
+	}
+
 	appLogger.Info("Starting Hot Coffee application",
 		"environment", loggerConfig.Environment,
 		"log_level", loggerConfig.Level)
@@ -95,7 +96,6 @@ func main() {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		// Simple JSON response
 		w.Write([]byte(`{"status":"healthy","service":"hot-coffee"}`))
 	})
 
@@ -119,7 +119,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server in a goroutine
 	go func() {
 		appLogger.Info("Starting HTTP server",
 			"host", host,
@@ -131,27 +130,21 @@ func main() {
 		}
 	}()
 
-	// Setup graceful shutdown
 	setupGracefulShutdown(server, appLogger)
 }
 
 // setupGracefulShutdown handles graceful server shutdown
 func setupGracefulShutdown(server *http.Server, logger *logger.Logger) {
-	// Create a channel to receive OS signals
 	quit := make(chan os.Signal, 1)
 
-	// Register the channel to receive specific signals
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	// Block until we receive a signal
 	sig := <-quit
 	logger.Info("Received shutdown signal", "signal", sig.String())
 
-	// Create a context with timeout for shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Attempt graceful shutdown
 	logger.Info("Shutting down server gracefully...")
 
 	if err := server.Shutdown(ctx); err != nil {
