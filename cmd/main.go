@@ -59,7 +59,7 @@ func main() {
 		EnableColors:  getEnv("LOG_ENABLE_COLORS", "false") == "true",
 		Environment:   getEnv("ENVIRONMENT", "development"),
 		EnableMetrics: true,
-		SensitiveKeys: []string{"password", "token", "secret", "key", "authorization"},
+		SensitiveKeys: []string{"password", "token", "secret", "key", "authorization"}, //abstract for now
 	}
 
 	appLogger := logger.New(loggerConfig)

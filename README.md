@@ -580,10 +580,29 @@ This approach ensures:
 
 ### Installation
 
-Clone the repository:
+1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd hot-coffee
+```
+
+2. Set up environment configuration:
+```bash
+cp .env.example .env
+```
+
+3. Edit `.env` file with your preferred settings:
+```bash
+# Example customizations
+LOG_LEVEL=debug
+LOG_FORMAT=text
+LOG_ENABLE_COLORS=true
+```
+
+4. Build and run the application:
+```bash
+go build -o hot-coffee ./cmd/main.go
+./hot-coffee
 ```
 
 ### Usage
