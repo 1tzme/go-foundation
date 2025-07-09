@@ -41,3 +41,10 @@ data/
 # Build artifacts
 hot-coffee
 hot-coffee.exe
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation (theory/internal docs)
+theory_only_docs/
