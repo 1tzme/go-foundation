@@ -1,4 +1,4 @@
-package dal
+package repositories
 
 // TODO: Add imports when implementing:
 // import (
