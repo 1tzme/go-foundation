@@ -62,8 +62,8 @@ func (r *InventoryRepository) Add(item *models.InventoryItem) error {
 
 // GetByID retrieves a single inventory item by ID
 func (r *InventoryRepository) GetByID(id string) (*models.InventoryItem, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
 	if !r.loaded {
 		if err := r.loadFromFile(); err != nil {
@@ -128,23 +128,15 @@ func NewInventoryRepository(logger *logger.Logger) *InventoryRepository {
 	}
 }
 
-
 func (r *InventoryRepository) GetAll() ([]*models.InventoryItem, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		r.mutex.RUnlock()
-		r.mutex.Lock()
-		defer r.mutex.Unlock()
-		defer func() { r.mutex.RLock() }()
-		
-		if !r.loaded { // Double-check after acquiring write lock
-			err := r.loadFromFile()
-			if err != nil {
-				r.logger.Error("Failed to load inventory from file", "error", err)
-				return nil, err
-			}
+		err := r.loadFromFile()
+		if err != nil {
+			r.logger.Error("Failed to load inventory from file", "error", err)
+			return nil, err
 		}
 	}
 
@@ -250,7 +242,7 @@ func (r *InventoryRepository) saveToFile() error {
 		items = append(items, item)
 	}
 
-	data, err := json.Marshal(items)
+	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal inventory data: %v", err)
 	}
