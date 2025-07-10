@@ -135,20 +135,15 @@ func main() {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
-	// Update inventory item (PUT)
+	// Combined handler for PUT (update item) and PATCH (update quantity)
 	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
-		// Expecting /api/v1/inventory/{id}
 		if r.Method == http.MethodPut {
+			// PUT /api/v1/inventory/{id}
 			inventoryHandler.UpdateInventoryItem(w, r)
 			return
 		}
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	})
-
-	// Update quantity (PATCH)
-	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
-		// Expecting /api/v1/inventory/{id}/quantity
 		if r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/quantity") {
+			// PATCH /api/v1/inventory/{id}/quantity
 			inventoryHandler.UpdateQuantity(w, r)
 			return
 		}
