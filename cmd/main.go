@@ -127,7 +127,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	// Try to start server, with fallback ports if needed
-	maxRetries := 3
+	maxRetries := 3 
 	for i := 0; i < maxRetries; i++ {
 		// Update server address with current port
 		server.Addr = host + ":" + port
