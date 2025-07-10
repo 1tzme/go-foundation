@@ -104,12 +104,55 @@ func main() {
 		w.Write([]byte(`{"status":"healthy","service":"hot-coffee"}`))
 	})
 
-	// TODO: Add API routes
+	// Add API routes for inventory
 	api := "/api/v1"
-	// mux.HandleFunc(api+"/orders", orderHandler.CreateOrder)
-	// mux.HandleFunc(api+"/menu", menuHandler.GetMenu)
+
+	// Get all inventory items (GET)
 	mux.HandleFunc(api+"/inventory", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			inventoryHandler.GetAllInventoryItems(w, r)
+			return
+		}
+		// Optionally, handle POST for create here in future
 		inventoryHandler.GetInventory(w, r)
+	})
+
+	// Get low stock items (GET)
+	mux.HandleFunc(api+"/inventory/low-stock", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			inventoryHandler.GetLowStockItems(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// Get inventory value (GET)
+	mux.HandleFunc(api+"/inventory/value", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			inventoryHandler.GetInventoryValue(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// Update inventory item (PUT)
+	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
+		// Expecting /api/v1/inventory/{id}
+		if r.Method == http.MethodPut {
+			inventoryHandler.UpdateInventoryItem(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// Update quantity (PATCH)
+	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
+		// Expecting /api/v1/inventory/{id}/quantity
+		if r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/quantity") {
+			inventoryHandler.UpdateQuantity(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
 	handler := appLogger.HTTPMiddleware(mux)
