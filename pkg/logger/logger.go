@@ -88,7 +88,7 @@ func DefaultConfig() Config {
 		Output:        "stdout",
 		EnableCaller:  true,
 		EnableColors:  false,
-		TimeFormat:    time.RFC3339,
+		TimeFormat:    time.RFC822, //"02 Jan 06 15:04 MST"
 		Environment:   "development",
 		MaxFileSize:   100 * 1024 * 1024, // 100MB
 		MaxBackups:    5,
@@ -100,7 +100,7 @@ func DefaultConfig() Config {
 // New creates a new enhanced logger instance
 func New(config Config) *Logger {
 	if config.TimeFormat == "" {
-		config.TimeFormat = time.RFC3339
+		config.TimeFormat = time.RFC822
 	}
 
 	var level slog.Level
@@ -146,6 +146,13 @@ func New(config Config) *Logger {
 			if a.Key == slog.TimeKey && config.TimeFormat != "" {
 				if t, ok := a.Value.Any().(time.Time); ok {
 					return slog.String(a.Key, t.Format(config.TimeFormat))
+				}
+			}
+
+			// Format source to show only filename without full path
+			if a.Key == slog.SourceKey {
+				if source, ok := a.Value.Any().(*slog.Source); ok {
+					return slog.String(a.Key, fmt.Sprintf("%s:%d", filepath.Base(source.File), source.Line))
 				}
 			}
 
