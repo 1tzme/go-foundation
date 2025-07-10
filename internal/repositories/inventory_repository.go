@@ -26,7 +26,91 @@ type InventoryRepositoryInterface interface {
 	Update(id string, item *models.InventoryItem) error
 	GetLowStockItems() ([]*models.InventoryItem, error)
 	UpdateQuantity(id string, quantity int) error
-	GetInventoryValue() (*models.InventoryValueAggregation, error)
+	Add(item *models.InventoryItem) error
+	GetByID(id string) (*models.InventoryItem, error)
+	Delete(id string) error
+}
+
+// Add adds a new inventory item
+func (r *InventoryRepository) Add(item *models.InventoryItem) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load inventory from file", "error", err)
+			return err
+		}
+	}
+
+	if _, exists := r.items[item.IngredientID]; exists {
+		r.logger.Warn("Attempted to add duplicate inventory item", "item_id", item.IngredientID)
+		return fmt.Errorf("inventory item with id %s already exists", item.IngredientID)
+	}
+
+	if err := r.validateInventoryItem(item); err != nil {
+		r.logger.Error("Failed to validate inventory item", "error", err, "item_id", item.IngredientID)
+		return err
+	}
+
+	r.items[item.IngredientID] = item
+	if err := r.saveToFile(); err != nil {
+		r.logger.Error("Failed to save inventory after add", "error", err)
+		return err
+	}
+	r.logger.Info("Added new inventory item", "item_id", item.IngredientID, "name", item.Name)
+	return nil
+}
+
+// GetByID retrieves a single inventory item by ID
+func (r *InventoryRepository) GetByID(id string) (*models.InventoryItem, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	if !r.loaded {
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load inventory from file", "error", err)
+			return nil, err
+		}
+	}
+
+	item, exists := r.items[id]
+	if !exists {
+		r.logger.Warn("Inventory item not found", "item_id", id)
+		return nil, fmt.Errorf("inventory item with id %s not found", id)
+	}
+	itemCopy := *item
+	return &itemCopy, nil
+}
+
+// Delete removes an inventory item by ID
+func (r *InventoryRepository) Delete(id string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load inventory from file", "error", err)
+			return err
+		}
+	}
+
+	if _, exists := r.items[id]; !exists {
+		r.logger.Warn("Attempted to delete non-existent inventory item", "item_id", id)
+		return fmt.Errorf("inventory item with id %s not found", id)
+	}
+
+	if err := r.backupFile(); err != nil {
+		r.logger.Warn("Failed to create backup before delete", "error", err)
+	}
+
+	delete(r.items, id)
+	if err := r.saveToFile(); err != nil {
+		r.logger.Error("Failed to save inventory after delete", "error", err)
+		return err
+	}
+	r.logger.Info("Deleted inventory item", "item_id", id)
+	return nil
 }
 
 // TODO: Implement InventoryRepository struct
@@ -53,8 +137,6 @@ func NewInventoryRepository(logger *logger.Logger) *InventoryRepository {
 // - Return copy of items slice
 // - Log retrieval event
 func (r *InventoryRepository) GetAll() ([]*models.InventoryItem, error) {
-	r.mutex.RLock()
-	r.mutex.RUnlock()
 
 	if !r.loaded {
 		err := r.loadFromFile()
@@ -79,8 +161,6 @@ func (r *InventoryRepository) GetAll() ([]*models.InventoryItem, error) {
 // - Update in memory and file
 // - Log update event
 func (r *InventoryRepository) Update(id string, item *models.InventoryItem) error {
-	r.mutex.Lock()
-	r.mutex.Unlock()
 
 	if !r.loaded {
 		err := r.loadFromFile()
@@ -178,38 +258,34 @@ func (r *InventoryRepository) UpdateQuantity(id string, quantity int) error {
 	return nil
 }
 
-// TODO: Implement GetInventoryValue method - Calculate total inventory value
-// - Sum all item values (quantity * unit_price)
-// - Return aggregated value data
-// - Log calculation event
-func (r *InventoryRepository) GetInventoryValue() (*models.InventoryValueAggregation, error) {
-	totalVal := 0.0
-	valueByCategory := make(map[string]float64)
-	itemCount := len(r.items)
-	lowStockCount := 0
-	defaultUnitPrice := 1.0
+// func (r *InventoryRepository) GetInventoryValue() (*models.InventoryValueAggregation, error) {
+// 	totalVal := 0.0
+// 	valueByCategory := make(map[string]float64)
+// 	itemCount := len(r.items)
+// 	lowStockCount := 0
+// 	defaultUnitPrice := 1.0
 
-	for _, item := range r.items {
-		itemValue := item.Quantity + defaultUnitPrice
-		totalVal += itemValue
-		valueByCategory[item.Unit] += itemValue
+// 	for _, item := range r.items {
+// 		itemValue := item.Quantity + defaultUnitPrice
+// 		totalVal += itemValue
+// 		valueByCategory[item.Unit] += itemValue
 
-		if r.checkLowStock(item) {
-			lowStockCount++
-		}
-	}
+// 		if r.checkLowStock(item) {
+// 			lowStockCount++
+// 		}
+// 	}
 
-	aggregation := &models.InventoryValueAggregation{
-		TotalValue:      totalVal,
-		ValueByCategory: valueByCategory,
-		ItemCount:       itemCount,
-		LowStockCount:   lowStockCount,
-		LastCalculated:  time.Now(),
-	}
+// 	aggregation := &models.InventoryValueAggregation{
+// 		TotalValue:      totalVal,
+// 		ValueByCategory: valueByCategory,
+// 		ItemCount:       itemCount,
+// 		LowStockCount:   lowStockCount,
+// 		LastCalculated:  time.Now(),
+// 	}
 
-	r.logger.Info("Calculated inventory value", "total_value", totalVal, "item_count", itemCount, "low_stock_count", lowStockCount)
-	return aggregation, nil
-}
+// 	r.logger.Info("Calculated inventory value", "total_value", totalVal, "item_count", itemCount, "low_stock_count", lowStockCount)
+// 	return aggregation, nil
+// }
 
 // TODO: Implement private helper methods
 // - loadFromFile() error - Load inventory from JSON file

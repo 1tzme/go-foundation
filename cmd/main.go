@@ -97,53 +97,38 @@ func main() {
 	// Setup HTTP routes
 	mux := http.NewServeMux()
 
-	// Health check endpoint
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy","service":"hot-coffee"}`))
-	})
-
 	// Add API routes for inventory
 	api := "/api/v1"
 
-	// Get all inventory items (GET)
+	// Inventory collection routes: POST (create), GET (all)
 	mux.HandleFunc(api+"/inventory", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			inventoryHandler.CreateInventoryItem(w, r)
+			return
+		}
 		if r.Method == http.MethodGet {
 			inventoryHandler.GetAllInventoryItems(w, r)
 			return
 		}
-		// Optionally, handle POST for create here in future
-		inventoryHandler.GetInventory(w, r)
-	})
-
-	// Get low stock items (GET)
-	mux.HandleFunc(api+"/inventory/low-stock", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			inventoryHandler.GetLowStockItems(w, r)
-			return
-		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
-	// Get inventory value (GET)
-	mux.HandleFunc(api+"/inventory/value", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			inventoryHandler.GetInventoryValue(w, r)
-			return
-		}
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	})
-
-	// Combined handler for PUT (update item) and PATCH (update quantity)
+	// Inventory item routes: GET (by id), PUT (update), DELETE (delete)
 	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
+		// /api/v1/inventory/{id} or /api/v1/inventory/{id}/quantity
+		if r.Method == http.MethodGet {
+			inventoryHandler.GetInventoryItem(w, r)
+			return
+		}
 		if r.Method == http.MethodPut {
-			// PUT /api/v1/inventory/{id}
 			inventoryHandler.UpdateInventoryItem(w, r)
 			return
 		}
+		if r.Method == http.MethodDelete {
+			inventoryHandler.DeleteInventoryItem(w, r)
+			return
+		}
 		if r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/quantity") {
-			// PATCH /api/v1/inventory/{id}/quantity
 			inventoryHandler.UpdateQuantity(w, r)
 			return
 		}
