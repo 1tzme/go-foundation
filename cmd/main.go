@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"hot-coffee/internal/handler"
+	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 )
 
@@ -81,14 +82,14 @@ func main() {
 	// menuRepo := dal.NewMenuRepository(appLogger)
 	// inventoryRepo := dal.NewInventoryRepository(appLogger)
 
+	// Temporary placeholder for inventoryService until real implementation is available
+	type inventoryRepoePlaceholder struct{}
+	var inventoryRepo interface{} = &inventoryRepoePlaceholder{}
+
 	// TODO: Initialize services with logger
 	// orderService := service.NewOrderService(orderRepo, inventoryRepo, appLogger)
 	// menuService := service.NewMenuService(menuRepo, appLogger)
-	// inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
-
-	// Temporary placeholder for inventoryService until real implementation is available
-	type inventoryServicePlaceholder struct{}
-	var inventoryService interface{} = &inventoryServicePlaceholder{}
+	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
 	// TODO: Initialize handlers with logger
 	// orderHandler := handler.NewOrderHandler(orderService, appLogger)
@@ -153,7 +154,6 @@ func main() {
 		// Wait a moment to see if the server starts successfully
 		select {
 		case err := <-serverErrors:
-			// If port is in use, try the next port
 			if strings.Contains(err.Error(), "address already in use") && i < maxRetries-1 {
 				portNum := 8080 + i + 1
 				port = fmt.Sprintf("%d", portNum)
@@ -162,21 +162,17 @@ func main() {
 					"next_port", port)
 				continue
 			} else {
-				// Other error or out of retries
 				appLogger.Error("Failed to start server after retries", "error", err)
 				return
 			}
 		case <-time.After(200 * time.Millisecond):
-			// Server started successfully
 			appLogger.Info("Server started successfully", "port", port)
-			break
+			// break
 		}
 
-		// If we get here, the server started successfully
 		break
 	}
 
-	// Wait for shutdown or server error
 	select {
 	case err := <-serverErrors:
 		appLogger.Error("Could not start server", "error", err)

@@ -3,20 +3,18 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 	"net/http"
 	"time"
 )
 
-// Temporary placeholder for InventoryServiceInterface
-type InventoryServiceInterface interface{}
-
 type InventoryHandler struct {
-	inventoryService InventoryServiceInterface
+	inventoryService service.InventoryServiceInterface
 	logger           *logger.Logger
 }
 
-func NewInventoryHandler(inventoryService InventoryServiceInterface, logger *logger.Logger) *InventoryHandler {
+func NewInventoryHandler(inventoryService service.InventoryServiceInterface, logger *logger.Logger) *InventoryHandler {
 	return &InventoryHandler{
 		inventoryService: inventoryService,
 		logger:           logger.WithComponent("inventory_handler"),
