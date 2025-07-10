@@ -258,10 +258,12 @@ func (l *Logger) Error(msg string, args ...interface{}) {
 	l.Logger.Error(msg, args...)
 }
 
-// Fatal logs at error level and panics
+// Fatal logs at error level and exits the program with status code 1
 func (l *Logger) Fatal(msg string, args ...interface{}) {
 	l.Error(msg, args...)
-	panic(msg)
+	
+	time.Sleep(100 * time.Millisecond)
+	os.Exit(1)
 }
 
 // LogRequest logs HTTP request information

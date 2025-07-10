@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -108,29 +109,76 @@ func main() {
 	// Setup server with logging middleware
 	handler := appLogger.HTTPMiddleware(mux)
 
-	port := getEnv("PORT", "8080")
+	initialPort := getEnv("PORT", "8080")
 	host := getEnv("HOST", "localhost")
 
+	// Try with the initial port first
+	port := initialPort
+
+	// Set up the server
 	server := &http.Server{
-		Addr:         host + ":" + port,
 		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
-	go func() {
-		appLogger.Info("Starting HTTP server",
-			"host", host,
-			"port", port,
-			"address", server.Addr)
+	// Create error channel to handle server errors
+	serverErrors := make(chan error, 1)
 
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			appLogger.Fatal("Failed to start server", "error", err)
+	// Try to start server, with fallback ports if needed
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		// Update server address with current port
+		server.Addr = host + ":" + port
+
+		// Start the server in a goroutine
+		go func() {
+			appLogger.Info("Starting HTTP server",
+				"host", host,
+				"port", port,
+				"address", server.Addr)
+
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				appLogger.Error("Server error", "error", err)
+				serverErrors <- err
+			}
+		}()
+
+		// Wait a moment to see if the server starts successfully
+		select {
+		case err := <-serverErrors:
+			// If port is in use, try the next port
+			if strings.Contains(err.Error(), "address already in use") && i < maxRetries-1 {
+				portNum := 8080 + i + 1
+				port = fmt.Sprintf("%d", portNum)
+				appLogger.Warn("Port already in use, trying alternative port",
+					"current_port", server.Addr,
+					"next_port", port)
+				continue
+			} else {
+				// Other error or out of retries
+				appLogger.Error("Failed to start server after retries", "error", err)
+				return
+			}
+		case <-time.After(200 * time.Millisecond):
+			// Server started successfully
+			appLogger.Info("Server started successfully", "port", port)
+			break
 		}
-	}()
 
-	setupGracefulShutdown(server, appLogger)
+		// If we get here, the server started successfully
+		break
+	}
+
+	// Wait for shutdown or server error
+	select {
+	case err := <-serverErrors:
+		appLogger.Error("Could not start server", "error", err)
+		return
+	default:
+		setupGracefulShutdown(server, appLogger)
+	}
 }
 
 // setupGracefulShutdown handles graceful server shutdown
