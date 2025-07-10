@@ -14,6 +14,7 @@ type InventoryHandler struct {
 	logger           *logger.Logger
 }
 
+// NewInventoryHandler creates a new InventoryHandler with the given inventory service and logger
 func NewInventoryHandler(inventoryService service.InventoryServiceInterface, logger *logger.Logger) *InventoryHandler {
 	return &InventoryHandler{
 		inventoryService: inventoryService,
@@ -34,15 +35,18 @@ func (h *InventoryHandler) GetAllInventoryItems(w http.ResponseWriter, r *http.R
 	}
 	h.logger.LogRequest(reqCtx)
 
-	// Placeholder: return static data until service is ready
-	items := []map[string]interface{}{
-		{"id": 1, "name": "Coffee Beans", "quantity": 100},
-		{"id": 2, "name": "Milk", "quantity": 50},
+	items, err := h.inventoryService.GetAllInventoryItems()
+	if err != nil {
+		h.logger.Error("Failed to get all inventory items", "error", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch inventory items")
+		reqCtx.StatusCode = http.StatusInternalServerError
+		h.logger.LogResponse(reqCtx)
+		return
 	}
-	writeJSONResponse(w, http.StatusOK, items)
 
+	writeJSONResponse(w, http.StatusOK, items)
 	reqCtx.StatusCode = http.StatusOK
-	reqCtx.ResponseSize = int64(len(items)) // For real use, calculate bytes written
+	// Optionally, calculate bytes written for ResponseSize
 	h.logger.LogResponse(reqCtx)
 }
 
@@ -56,15 +60,17 @@ func (h *InventoryHandler) GetInventory(w http.ResponseWriter, r *http.Request) 
 	}
 	h.logger.LogRequest(reqCtx)
 
-	// Placeholder: return static data until service is ready
-	items := []map[string]interface{}{
-		{"id": 1, "name": "Coffee Beans", "quantity": 100},
-		{"id": 2, "name": "Milk", "quantity": 50},
+	items, err := h.inventoryService.GetAllInventoryItems()
+	if err != nil {
+		h.logger.Error("Failed to get inventory", "error", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch inventory items")
+		reqCtx.StatusCode = http.StatusInternalServerError
+		h.logger.LogResponse(reqCtx)
+		return
 	}
-	writeJSONResponse(w, http.StatusOK, items)
 
+	writeJSONResponse(w, http.StatusOK, items)
 	reqCtx.StatusCode = http.StatusOK
-	reqCtx.ResponseSize = int64(len(items)) // For real use, calculate bytes written
 	h.logger.LogResponse(reqCtx)
 }
 
@@ -87,8 +93,7 @@ func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Placeholder for request body struct
-	var updateReq map[string]interface{}
+	var updateReq service.UpdateInventoryItemRequest
 	if err := parseRequestBody(r, &updateReq); err != nil {
 		h.logger.Warn("Invalid request body", "error", err)
 		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -97,13 +102,16 @@ func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// TODO: Call inventoryService.UpdateItem(id, updateReq) and handle result
-	// For now, just echo back the update
-	resp := map[string]interface{}{
-		"id":   id,
-		"data": updateReq,
+	err := h.inventoryService.UpdateInventoryItem(id, updateReq)
+	if err != nil {
+		h.logger.Warn("Failed to update inventory item", "id", id, "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
 	}
-	writeJSONResponse(w, http.StatusOK, resp)
+
+	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Inventory item updated"})
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
 }
@@ -118,18 +126,21 @@ func (h *InventoryHandler) GetLowStockItems(w http.ResponseWriter, r *http.Reque
 	}
 	h.logger.LogRequest(reqCtx)
 
-	// Placeholder: static low stock items
-	lowStock := []map[string]interface{}{
-		{"id": 2, "name": "Milk", "quantity": 5},
+	items, err := h.inventoryService.GetLowStockItems()
+	if err != nil {
+		h.logger.Error("Failed to get low stock items", "error", err)
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch low stock items")
+		reqCtx.StatusCode = http.StatusInternalServerError
+		h.logger.LogResponse(reqCtx)
+		return
 	}
 
-	if len(lowStock) > 0 {
-		h.logger.Warn("Low stock items found", "count", len(lowStock))
+	if len(items) > 0 {
+		h.logger.Warn("Low stock items found", "count", len(items))
 	}
 
-	writeJSONResponse(w, http.StatusOK, lowStock)
+	writeJSONResponse(w, http.StatusOK, items)
 	reqCtx.StatusCode = http.StatusOK
-	reqCtx.ResponseSize = int64(len(lowStock))
 	h.logger.LogResponse(reqCtx)
 }
 
@@ -152,10 +163,7 @@ func (h *InventoryHandler) UpdateQuantity(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Parse quantity from request body
-	var reqBody struct {
-		Quantity int `json:"quantity"`
-	}
+	var reqBody service.UpdateQuantityRequest
 	if err := parseRequestBody(r, &reqBody); err != nil {
 		h.logger.Warn("Invalid request body for quantity update", "error", err)
 		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
@@ -163,21 +171,17 @@ func (h *InventoryHandler) UpdateQuantity(w http.ResponseWriter, r *http.Request
 		h.logger.LogResponse(reqCtx)
 		return
 	}
-	if reqBody.Quantity < 0 {
-		h.logger.Warn("Invalid quantity value", "quantity", reqBody.Quantity)
-		writeErrorResponse(w, http.StatusBadRequest, "Quantity must be non-negative")
+
+	err := h.inventoryService.UpdateQuantity(id, reqBody)
+	if err != nil {
+		h.logger.Warn("Failed to update quantity", "id", id, "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		reqCtx.StatusCode = http.StatusBadRequest
 		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	// TODO: Call inventoryService.UpdateQuantity(id, reqBody.Quantity) and handle result
-	// For now, just echo back the update
-	resp := map[string]interface{}{
-		"id":       id,
-		"quantity": reqBody.Quantity,
-	}
-	writeJSONResponse(w, http.StatusOK, resp)
+	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "quantity": reqBody.Quantity, "message": "Quantity updated"})
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
 }
