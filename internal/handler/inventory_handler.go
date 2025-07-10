@@ -2,10 +2,11 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -33,8 +34,8 @@ func (h *InventoryHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// For now, generate a new ID as a timestamp string (replace with better ID logic as needed)
-	newID := fmt.Sprintf("%d", time.Now().UnixNano())
+	// Generate ingredient ID based on the ingredient name
+	newID := generateIngredientID(createReq.Name)
 	err := h.inventoryService.CreateInventoryItem(newID, createReq)
 	if err != nil {
 		h.logger.Warn("Failed to create inventory item", "error", err)
@@ -76,7 +77,7 @@ func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Reque
 		h.logger.LogResponse(reqCtx)
 		return
 	}
-	
+
 	writeJSONResponse(w, http.StatusOK, item)
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
@@ -109,7 +110,7 @@ func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Re
 		h.logger.LogResponse(reqCtx)
 		return
 	}
-	
+
 	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Inventory item deleted"})
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
@@ -255,4 +256,25 @@ func split(s string, sep rune) []string {
 // validateInventoryItemID - Validate inventory item ID format
 func validateInventoryItemID(id string) error {
 	return nil
+}
+
+// generateIngredientID - Generate ingredient ID based on ingredient name
+func generateIngredientID(name string) string {
+	// Convert to lowercase and replace spaces/special chars with underscores
+	cleaned := strings.ToLower(name)
+
+	// Replace any non-alphanumeric characters with underscores
+	reg := regexp.MustCompile(`[^a-z0-9]+`)
+	cleaned = reg.ReplaceAllString(cleaned, "_")
+
+	// Remove leading/trailing underscores
+	cleaned = strings.Trim(cleaned, "_")
+
+	// If empty after cleaning, use default
+	if cleaned == "" {
+		cleaned = "ingredient"
+	}
+
+	// Add prefix to make it clear it's an ingredient ID
+	return "ing_" + cleaned
 }
