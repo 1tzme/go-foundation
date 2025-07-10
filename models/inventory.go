@@ -2,8 +2,6 @@ package models
 
 import "time"
 
-import "time"
-
 type InventoryItem struct {
 	IngredientID string    `json:"ingredient_id"`
 	Name         string    `json:"name"`
@@ -11,7 +9,7 @@ type InventoryItem struct {
 	Unit         string    `json:"unit"`
 	ID           string    `json:"id"`
 	Description  string    `json:"description"`
-	MinThreshold int       `json:"min_threshold"`
+	MinThreshold float64   `json:"min_threshold"`
 	LastUpdated  time.Time `json:"last_updated"`
 }
 
@@ -26,10 +24,10 @@ type InventoryValueAggregation struct {
 
 // TODO: Add low stock alert model
 type LowStockAlert struct {
-    ItemID           string    `json:"item_id"`
-    ItemName         string    `json:"item_name"`
-    CurrentQuantity  int       `json:"current_quantity"`
-    MinThreshold     int       `json:"min_threshold"`
-    AlertLevel       string    `json:"alert_level"` // "low", "critical"
-    LastUpdated      time.Time `json:"last_updated"`
+	ItemID          string    `json:"item_id"`
+	ItemName        string    `json:"item_name"`
+	CurrentQuantity int       `json:"current_quantity"`
+	MinThreshold    int       `json:"min_threshold"`
+	AlertLevel      string    `json:"alert_level"` // "low", "critical"
+	LastUpdated     time.Time `json:"last_updated"`
 }

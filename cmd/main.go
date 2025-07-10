@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"hot-coffee/internal/handler"
+	"hot-coffee/internal/repositories"
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 )
@@ -80,11 +81,7 @@ func main() {
 	// TODO: Initialize repositories with logger
 	// orderRepo := dal.NewOrderRepository(appLogger)
 	// menuRepo := dal.NewMenuRepository(appLogger)
-	// inventoryRepo := dal.NewInventoryRepository(appLogger)
-
-	// Temporary placeholder for inventoryService until real implementation is available
-	type inventoryRepoePlaceholder struct{}
-	var inventoryRepo interface{} = &inventoryRepoePlaceholder{}
+	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
 	// TODO: Initialize services with logger
 	// orderService := service.NewOrderService(orderRepo, inventoryRepo, appLogger)

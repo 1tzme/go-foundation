@@ -2,12 +2,10 @@ package service
 
 import (
 	"fmt"
+	"hot-coffee/internal/repositories"
 	"hot-coffee/models"
 	"hot-coffee/pkg/logger"
 )
-
-// Temporary placeholder for InventoryServiceInterface
-type InventoryRepositoryInterface interface{}
 
 type UpdateInventoryItemRequest struct {
 	Name         string `json:"name"`
@@ -30,12 +28,12 @@ type InventoryServiceInterface interface {
 }
 
 type InventoryService struct {
-	inventoryRepo InventoryRepositoryInterface
+	inventoryRepo repositories.InventoryRepositoryInterface
 	logger        *logger.Logger
 }
 
 // NewInventoryService creates a new instance of InventoryService
-func NewInventoryService(inventoryRepo InventoryRepositoryInterface, logger *logger.Logger) *InventoryService {
+func NewInventoryService(inventoryRepo repositories.InventoryRepositoryInterface, logger *logger.Logger) *InventoryService {
 	return &InventoryService{
 		inventoryRepo: inventoryRepo,
 		logger:        logger.WithComponent("inventory_service"),
@@ -44,26 +42,11 @@ func NewInventoryService(inventoryRepo InventoryRepositoryInterface, logger *log
 
 // GetAllInventoryItems returns all inventory items (placeholder implementation)
 func (s *InventoryService) GetAllInventoryItems() ([]*models.InventoryItem, error) {
-	s.logger.Info("Fetching all inventory items")
-
-	// Placeholder: return static data until repository is implemented
-	items := []*models.InventoryItem{
-		{
-			ID:           "1",
-			Name:         "Coffee Beans",
-			Description:  "Premium Arabica beans",
-			Quantity:     100,
-			MinThreshold: 10,
-			Unit:         "kg",
-		},
-		{
-			ID:           "2",
-			Name:         "Milk",
-			Description:  "Whole milk",
-			Quantity:     50,
-			MinThreshold: 5,
-			Unit:         "liters",
-		},
+	s.logger.Info("Fetching all inventory items from repository")
+	items, err := s.inventoryRepo.GetAll()
+	if err != nil {
+		s.logger.Error("Failed to fetch inventory items from repository", "error", err)
+		return nil, err
 	}
 	s.logger.Info("Fetched inventory items", "count", len(items))
 	return items, nil
@@ -73,52 +56,60 @@ func (s *InventoryService) GetAllInventoryItems() ([]*models.InventoryItem, erro
 func (s *InventoryService) UpdateInventoryItem(id string, req UpdateInventoryItemRequest) error {
 	s.logger.Info("Updating inventory item", "id", id, "name", req.Name)
 
-	// Example validation: name and quantity must be present
-	if req.Name == "" {
-		s.logger.Warn("Update failed: name is required", "id", id)
-		return fmt.Errorf("name is required")
-	}
-	if req.Quantity < 0 {
-		s.logger.Warn("Update failed: quantity must be non-negative", "id", id, "quantity", req.Quantity)
-		return fmt.Errorf("quantity must be non-negative")
+	// Validate input
+	if err := validateInventoryItemData(req); err != nil {
+		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
+		return err
 	}
 
-	// TODO: Add repository update logic here
+	// Build item struct for update
+	item := &models.InventoryItem{
+		IngredientID: id,
+		Name:         req.Name,
+		Description:  req.Description,
+		Quantity:     float64(req.Quantity),
+		MinThreshold: float64(req.MinThreshold),
+		Unit:         req.Unit,
+	}
 
-	s.logger.Info("Inventory item updated (placeholder)", "id", id)
+	err := s.inventoryRepo.Update(id, item)
+	if err != nil {
+		s.logger.Error("Failed to update inventory item in repository", "id", id, "error", err)
+		return err
+	}
+
+	s.logger.Info("Inventory item updated", "id", id)
 	return nil
 }
 
 // GetLowStockItems returns items that are below the minimum threshold
 func (s *InventoryService) GetLowStockItems() ([]*models.InventoryItem, error) {
-	s.logger.Info("Fetching low stock items")
-
-	// Placeholder: return static data until repository is implemented
-	lowStockItems := []*models.InventoryItem{
-		{
-			ID:          "2",
-			Name:        "Milk",
-			Description: "Whole milk",
-			Quantity:    5,
-			Unit:        "liters",
-		},
+	s.logger.Info("Fetching low stock items from repository")
+	items, err := s.inventoryRepo.GetLowStockItems()
+	if err != nil {
+		s.logger.Error("Failed to fetch low stock items from repository", "error", err)
+		return nil, err
 	}
-	s.logger.Info("Fetched low stock items", "count", len(lowStockItems))
-	return lowStockItems, nil
+	s.logger.Info("Fetched low stock items", "count", len(items))
+	return items, nil
 }
 
 // UpdateQuantity updates the quantity of an inventory item
 func (s *InventoryService) UpdateQuantity(id string, req UpdateQuantityRequest) error {
 	s.logger.Info("Updating inventory item quantity", "id", id, "quantity", req.Quantity)
 
-	// Example validation: quantity must be non-negative
-	if req.Quantity < 0 {
+	if err := validateQuantity(req.Quantity); err != nil {
 		s.logger.Warn("Update failed: quantity must be non-negative", "id", id, "quantity", req.Quantity)
-		return fmt.Errorf("quantity must be non-negative")
+		return err
 	}
 
-	// Placeholder: add repository update logic here
-	s.logger.Info("Inventory item quantity updated (placeholder)", "id", id, "quantity", req.Quantity)
+	err := s.inventoryRepo.UpdateQuantity(id, req.Quantity)
+	if err != nil {
+		s.logger.Error("Failed to update inventory item quantity in repository", "id", id, "error", err)
+		return err
+	}
+
+	s.logger.Info("Inventory item quantity updated", "id", id, "quantity", req.Quantity)
 	return nil
 }
 
@@ -147,12 +138,6 @@ func validateInventoryItemData(req UpdateInventoryItemRequest) error {
 	return nil
 }
 
-// checkLowStockCondition checks if an inventory item is below its minimum threshold
-// func checkLowStockCondition(item *models.InventoryItem) bool {
-// 	// Check if the item's quantity is below the minimum threshold
-// 	return item.Quantity < item.MinThreshold
-// }
-
 // validateInventoryItemID validates the ID of an inventory item
 func validateQuantity(quantity int) error {
 	if quantity < 0 {
@@ -169,11 +154,3 @@ func validateQuantity(quantity int) error {
 // 			item.Name, item.ID, item.Quantity, item.MinThreshold)
 // 	}
 // }
-
-// validateThreshold checks if the minimum threshold is valid
-func validateThreshold(threshold int) error {
-	if threshold < 0 {
-		return fmt.Errorf("minimum threshold must be non-negative")
-	}
-	return nil
-}
