@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"hot-coffee/internal/handler"
 	"hot-coffee/pkg/logger"
 )
 
@@ -85,10 +86,15 @@ func main() {
 	// menuService := service.NewMenuService(menuRepo, appLogger)
 	// inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
+	// Temporary placeholder for inventoryService until real implementation is available
+	type inventoryServicePlaceholder struct{}
+	var inventoryService interface{} = &inventoryServicePlaceholder{}
+
 	// TODO: Initialize handlers with logger
 	// orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	// menuHandler := handler.NewMenuHandler(menuService, appLogger)
-	// inventoryHandler := handler.NewInventoryHandler(inventoryService, appLogger)
+
+	inventoryHandler := handler.NewInventoryHandler(inventoryService, appLogger)
 
 	// Setup HTTP routes
 	mux := http.NewServeMux()
@@ -101,21 +107,20 @@ func main() {
 	})
 
 	// TODO: Add API routes
-	// api := "/api/v1"
+	api := "/api/v1"
 	// mux.HandleFunc(api+"/orders", orderHandler.CreateOrder)
 	// mux.HandleFunc(api+"/menu", menuHandler.GetMenu)
-	// mux.HandleFunc(api+"/inventory", inventoryHandler.GetInventory)
+	mux.HandleFunc(api+"/inventory", func(w http.ResponseWriter, r *http.Request) {
+		inventoryHandler.GetInventory(w, r)
+	})
 
-	// Setup server with logging middleware
 	handler := appLogger.HTTPMiddleware(mux)
 
 	initialPort := getEnv("PORT", "8080")
 	host := getEnv("HOST", "localhost")
 
-	// Try with the initial port first
 	port := initialPort
 
-	// Set up the server
 	server := &http.Server{
 		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
@@ -127,7 +132,7 @@ func main() {
 	serverErrors := make(chan error, 1)
 
 	// Try to start server, with fallback ports if needed
-	maxRetries := 3 
+	maxRetries := 3
 	for i := 0; i < maxRetries; i++ {
 		// Update server address with current port
 		server.Addr = host + ":" + port
