@@ -15,15 +15,9 @@ type UpdateInventoryItemRequest struct {
 	Unit         string `json:"unit"`
 }
 
-type UpdateQuantityRequest struct {
-	Quantity int `json:"quantity"`
-}
-
 type InventoryServiceInterface interface {
 	GetAllInventoryItems() ([]*models.InventoryItem, error)
 	UpdateInventoryItem(id string, req UpdateInventoryItemRequest) error
-	GetLowStockItems() ([]*models.InventoryItem, error)
-	UpdateQuantity(id string, req UpdateQuantityRequest) error
 	CreateInventoryItem(id string, req UpdateInventoryItemRequest) error
 	GetInventoryItem(id string) (*models.InventoryItem, error)
 	DeleteInventoryItem(id string) error
@@ -128,43 +122,6 @@ func (s *InventoryService) UpdateInventoryItem(id string, req UpdateInventoryIte
 	return nil
 }
 
-// GetLowStockItems returns items that are below the minimum threshold
-func (s *InventoryService) GetLowStockItems() ([]*models.InventoryItem, error) {
-	s.logger.Info("Fetching low stock items from repository")
-	items, err := s.inventoryRepo.GetLowStockItems()
-	if err != nil {
-		s.logger.Error("Failed to fetch low stock items from repository", "error", err)
-		return nil, err
-	}
-	s.logger.Info("Fetched low stock items", "count", len(items))
-	return items, nil
-}
-
-// UpdateQuantity updates the quantity of an inventory item
-func (s *InventoryService) UpdateQuantity(id string, req UpdateQuantityRequest) error {
-	s.logger.Info("Updating inventory item quantity", "id", id, "quantity", req.Quantity)
-
-	if err := validateQuantity(req.Quantity); err != nil {
-		s.logger.Warn("Update failed: quantity must be non-negative", "id", id, "quantity", req.Quantity)
-		return err
-	}
-
-	err := s.inventoryRepo.UpdateQuantity(id, req.Quantity)
-	if err != nil {
-		s.logger.Error("Failed to update inventory item quantity in repository", "id", id, "error", err)
-		return err
-	}
-
-	s.logger.Info("Inventory item quantity updated", "id", id, "quantity", req.Quantity)
-	return nil
-}
-
-// TODO: Implement GetInventoryValue method - Calculate inventory value
-// - Call repository for inventory value aggregation
-// - Apply business logic for valuation
-// - Log calculation event
-// func (s *InventoryService) GetInventoryValue() (*models.InventoryValueAggregation, error)
-
 // Private business logic methods
 
 // validateInventoryItemData validates the data for an inventory item update
@@ -183,20 +140,3 @@ func validateInventoryItemData(req UpdateInventoryItemRequest) error {
 	}
 	return nil
 }
-
-// validateInventoryItemID validates the ID of an inventory item
-func validateQuantity(quantity int) error {
-	if quantity < 0 {
-		return fmt.Errorf("quantity must be non-negative")
-	}
-	return nil
-}
-
-// logLowStockWarning logs a warning if an inventory item is below its minimum threshold
-// func logLowStockWarning(item *models.InventoryItem) {
-// 	if item.Quantity < item.MinThreshold {
-// 		// Log a warning if the item's quantity is below the minimum threshold
-// 		fmt.Printf("Warning: Low stock for item %s (ID: %s). Current quantity: %d, Minimum threshold: %d\n",
-// 			item.Name, item.ID, item.Quantity, item.MinThreshold)
-// 	}
-// }

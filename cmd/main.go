@@ -128,10 +128,6 @@ func main() {
 			inventoryHandler.DeleteInventoryItem(w, r)
 			return
 		}
-		if r.Method == http.MethodPatch && strings.HasSuffix(r.URL.Path, "/quantity") {
-			inventoryHandler.UpdateQuantity(w, r)
-			return
-		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 
