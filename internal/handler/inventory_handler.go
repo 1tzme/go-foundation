@@ -61,14 +61,6 @@ func (h *InventoryHandler) GetInventoryItem(w http.ResponseWriter, r *http.Reque
 	h.logger.LogRequest(reqCtx)
 
 	id := extractIDFromPath(r)
-	if err := validateInventoryItemID(id); err != nil {
-		h.logger.Warn("Invalid inventory item ID", "id", id, "error", err)
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogResponse(reqCtx)
-		return
-	}
-
 	item, err := h.inventoryService.GetInventoryItem(id)
 	if err != nil {
 		h.logger.Warn("Inventory item not found", "id", id, "error", err)
@@ -94,13 +86,6 @@ func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Re
 	h.logger.LogRequest(reqCtx)
 
 	id := extractIDFromPath(r)
-	if err := validateInventoryItemID(id); err != nil {
-		h.logger.Warn("Invalid inventory item ID", "id", id, "error", err)
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogResponse(reqCtx)
-		return
-	}
 
 	err := h.inventoryService.DeleteInventoryItem(id)
 	if err != nil {
@@ -160,13 +145,6 @@ func (h *InventoryHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Re
 	h.logger.LogRequest(reqCtx)
 
 	id := extractIDFromPath(r)
-	if err := validateInventoryItemID(id); err != nil {
-		h.logger.Warn("Invalid inventory item ID", "id", id, "error", err)
-		writeErrorResponse(w, http.StatusBadRequest, err.Error())
-		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogResponse(reqCtx)
-		return
-	}
 
 	var updateReq service.UpdateInventoryItemRequest
 	if err := parseRequestBody(r, &updateReq); err != nil {
@@ -251,12 +229,6 @@ func split(s string, sep rune) []string {
 	}
 	res = append(res, s[last:])
 	return res
-}
-
-// TODO REMOVE
-// validateInventoryItemID - Validate inventory item ID format
-func validateInventoryItemID(id string) error {
-	return nil
 }
 
 // generateIngredientID - Generate ingredient ID based on ingredient name
