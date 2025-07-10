@@ -253,6 +253,7 @@ func split(s string, sep rune) []string {
 	return res
 }
 
+// TODO REMOVE
 // validateInventoryItemID - Validate inventory item ID format
 func validateInventoryItemID(id string) error {
 	return nil
@@ -276,5 +277,5 @@ func generateIngredientID(name string) string {
 	}
 
 	// Add prefix to make it clear it's an ingredient ID
-	return "ing_" + cleaned
+	return cleaned
 }
