@@ -1,18 +1,19 @@
 package models
 
+import "time"
+
 // TODO: Add import when implementing time-based fields:
 // import "time"
 
 type InventoryItem struct {
-	IngredientID string  `json:"ingredient_id"`
-	Name         string  `json:"name"`
-	Quantity     float64 `json:"quantity"`
-	Unit         string  `json:"unit"`
-	// TODO: Add additional fields based on README spec:
-	// ID           string    `json:"id"`
-	// Description  string    `json:"description"`
-	// MinThreshold int       `json:"min_threshold"`
-	// LastUpdated  time.Time `json:"last_updated"`
+	IngredientID string    `json:"ingredient_id"`
+	Name         string    `json:"name"`
+	Quantity     float64   `json:"quantity"`
+	Unit         string    `json:"unit"`
+	ID           string    `json:"id"`
+	Description  string    `json:"description"`
+	MinThreshold int       `json:"min_threshold"`
+	LastUpdated  time.Time `json:"last_updated"`
 }
 
 // TODO: Add aggregation models based on README spec
