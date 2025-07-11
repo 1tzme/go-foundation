@@ -1,73 +1,86 @@
 package repositories
 
-// TODO: Add imports when implementing:
 // import (
-//     "sync"
-//     "hot-coffee/models"
-//     "hot-coffee/pkg/logger"
+// 	"hot-coffee/models"
+// 	"hot-coffee/pkg/logger"
+// 	"sync"
 // )
 
-// TODO: Implement OrderRepository interface
+// // TODO: Add imports when implementing:
+// // import (
+// //     "sync"
+// //     "hot-coffee/models"
+// //     "hot-coffee/pkg/logger"
+// // )
+
+// // TODO: Implement OrderRepository interface
 // type OrderRepositoryInterface interface {
-//     Create(order *models.Order) error
-//     GetAll() ([]*models.Order, error)
-//     GetByID(id string) (*models.Order, error)
-//     UpdateStatus(id string, status models.OrderStatus) error
-//     GetSalesAggregations() (*models.SalesAggregation, error)
+// 	GetAll() ([]*models.Order, error)
+// 	GetByID(id string) (*models.Order, error)
+// 	Add(order *models.Order) error
+// 	Update(id string, order *models.Order) error
+// 	Delete(id string) error
+// 	CloseOrder(id string) error
 // }
 
-// TODO: Implement OrderRepository struct
+// // TODO: Implement OrderRepository struct
 // type OrderRepository struct {
-//     orders map[string]*models.Order
-//     mutex  sync.RWMutex
-//     logger *logger.Logger
-//     dataFilePath string
+// 	orders       map[string]*models.Order
+// 	mutex        sync.RWMutex
+// 	logger       *logger.Logger
+// 	dataFilePath string
+// 	loaded       bool
 // }
 
-// TODO: Implement constructor with logger injection
+// // TODO: Implement constructor with logger injection
 // func NewOrderRepository(logger *logger.Logger) *OrderRepository {
-//     return &OrderRepository{
-//         orders: make(map[string]*models.Order),
-//         logger: logger.WithComponent("order_repository"),
-//         dataFilePath: "./data/orders.json",
-//     }
+// 	return &OrderRepository{
+// 		orders:       make(map[string]*models.Order),
+// 		logger:       logger.WithComponent("order_repository"),
+// 		dataFilePath: "./data/orders.json",
+// 		loaded:       false,
+// 	}
 // }
 
-// TODO: Implement Create method - Create a new order
-// - Generate unique order ID
-// - Validate order data
-// - Save to memory map
-// - Persist to JSON file atomically
-// - Log creation event
-// func (r *OrderRepository) Create(order *models.Order) error
-
-// TODO: Implement GetAll method - Retrieve all orders
-// - Load from JSON file if not in memory
-// - Return copy of orders slice
-// - Log retrieval event
+// // TODO: Implement GetAll method - Retrieve all orders
+// // - Load from JSON file if not in memory
+// // - Return copy of orders slice
+// // - Log retrieval event
 // func (r *OrderRepository) GetAll() ([]*models.Order, error)
 
-// TODO: Implement GetByID method - Retrieve order by ID
-// - Search in memory map
-// - Return error if not found
-// - Log access event
+// // TODO: Implement GetByID method - Retrieve order by ID
+// // - Search in memory map
+// // - Return error if not found
+// // - Log access event
 // func (r *OrderRepository) GetByID(id string) (*models.Order, error)
 
-// TODO: Implement UpdateStatus method - Update order status
-// - Validate status transition
-// - Update in memory and file
-// - Log status change event
-// func (r *OrderRepository) UpdateStatus(id string, status models.OrderStatus) error
+// // TODO: Implement Add method - Create a new order
+// // - Validate order data
+// // - Save to memory map
+// // - Persist to JSON file atomically
+// // - Log creation event
+// func (r *OrderRepository) Add(order *models.Order) error
 
-// TODO: Implement GetSalesAggregations method - Calculate sales totals
-// - Sum all completed orders
-// - Group by time periods
-// - Return aggregated data
-// func (r *OrderRepository) GetSalesAggregations() (*models.SalesAggregation, error)
+// // TODO: Implement Update method - Update existing order
+// // - Validate order exists
+// // - Update in memory and file
+// // - Log update event
+// func (r *OrderRepository) Update(id string, order *models.Order) error
 
-// TODO: Implement private helper methods
-// - loadFromFile() error - Load orders from JSON file
-// - saveToFile() error - Save orders to JSON file atomically
-// - generateOrderID() string - Generate unique order ID
-// - validateOrder(order *models.Order) error - Validate order data
-// - backupFile() error - Create backup before updates
+// // TODO: Implement Delete method - Delete order by ID
+// // - Validate order exists
+// // - Remove from memory and file
+// // - Log deletion event
+// func (r *OrderRepository) Delete(id string) error
+
+// // TODO: Implement CloseOrder method - Close order by setting status
+// // - Validate order exists
+// // - Update status to closed
+// // - Log close event
+// func (r *OrderRepository) CloseOrder(id string) error
+
+// // TODO: Implement private helper methods
+// // - loadFromFile() error - Load orders from JSON file
+// // - saveToFile() error - Save orders to JSON file atomically
+// // - validateOrder(order *models.Order) error - Validate order data
+// // - backupFile() error - Create backup before updates

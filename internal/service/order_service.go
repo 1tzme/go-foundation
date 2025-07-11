@@ -1,94 +1,99 @@
 package service
 
-// TODO: Add imports when implementing:
 // import (
-//     "hot-coffee/models"
-//     "hot-coffee/internal/dal"
-//     "hot-coffee/pkg/logger"
-//     "time"
+// 	"hot-coffee/internal/repositories"
+// 	"hot-coffee/models"
+// 	"hot-coffee/pkg/logger"
 // )
 
-// TODO: Define request/response structs
+// // TODO: Add imports when implementing:
+// // import (
+// //     "hot-coffee/models"
+// //     "hot-coffee/internal/repositories"
+// //     "hot-coffee/pkg/logger"
+// // )
+
+// // TODO: Define request/response structs
 // type CreateOrderRequest struct {
-//     CustomerName string                `json:"customer_name"`
-//     Items        []CreateOrderItemRequest `json:"items"`
+// 	CustomerName string                   `json:"customer_name"`
+// 	Items        []CreateOrderItemRequest `json:"items"`
 // }
-//
+
 // type CreateOrderItemRequest struct {
-//     ProductID string `json:"product_id"`
-//     Quantity  int    `json:"quantity"`
-// }
-//
-// type UpdateOrderStatusRequest struct {
-//     Status models.OrderStatus `json:"status"`
+// 	ProductID string `json:"product_id"`
+// 	Quantity  int    `json:"quantity"`
 // }
 
-// TODO: Implement OrderService interface
+// type UpdateOrderRequest struct {
+// 	CustomerName string                   `json:"customer_name"`
+// 	Items        []CreateOrderItemRequest `json:"items"`
+// 	Status       string                   `json:"status"`
+// }
+
+// // TODO: Implement OrderService interface
 // type OrderServiceInterface interface {
-//     CreateOrder(req CreateOrderRequest) (*models.Order, error)
-//     GetAllOrders() ([]*models.Order, error)
-//     GetOrderByID(id string) (*models.Order, error)
-//     UpdateOrderStatus(id string, req UpdateOrderStatusRequest) error
-//     GetSalesAggregations() (*models.SalesAggregation, error)
+// 	CreateOrder(req CreateOrderRequest) (*models.Order, error)
+// 	GetAllOrders() ([]*models.Order, error)
+// 	GetOrderByID(id string) (*models.Order, error)
+// 	UpdateOrder(id string, req UpdateOrderRequest) error
+// 	DeleteOrder(id string) error
+// 	CloseOrder(id string) error
 // }
 
-// TODO: Implement OrderService struct
+// // TODO: Implement OrderService struct
 // type OrderService struct {
-//     orderRepo     dal.OrderRepositoryInterface
-//     inventoryRepo dal.InventoryRepositoryInterface
-//     menuRepo      dal.MenuRepositoryInterface
-//     logger        *logger.Logger
+// 	orderRepo repositories.OrderRepositoryInterface
+// 	logger    *logger.Logger
 // }
 
-// TODO: Implement constructor with logger injection
-// func NewOrderService(orderRepo dal.OrderRepositoryInterface, inventoryRepo dal.InventoryRepositoryInterface, menuRepo dal.MenuRepositoryInterface, logger *logger.Logger) *OrderService {
-//     return &OrderService{
-//         orderRepo:     orderRepo,
-//         inventoryRepo: inventoryRepo,
-//         menuRepo:      menuRepo,
-//         logger:        logger.WithComponent("order_service"),
-//     }
+// // TODO: Implement constructor with logger injection
+// func NewOrderService(orderRepo repositories.OrderRepositoryInterface, logger *logger.Logger) *OrderService {
+// 	return &OrderService{
+// 		orderRepo: orderRepo,
+// 		logger:    logger.WithComponent("order_service"),
+// 	}
 // }
 
-// TODO: Implement CreateOrder method - Core business logic for order creation
-// - Validate customer name is not empty
-// - Validate order items exist in menu
-// - Check inventory availability for each item
-// - Calculate total amount from menu prices
-// - Create order with generated ID and current timestamp
-// - Update inventory quantities
-// - Log business event
+// // TODO: Implement CreateOrder method - Create a new order
+// // - Validate customer name is not empty
+// // - Validate order items
+// // - Create order with generated ID and current timestamp
+// // - Log business event
 // func (s *OrderService) CreateOrder(req CreateOrderRequest) (*models.Order, error)
 
-// TODO: Implement GetAllOrders method - Retrieve all orders
-// - Call repository to get all orders
-// - Log retrieval event
-// - Return orders list
+// // TODO: Implement GetAllOrders method - Retrieve all orders
+// // - Call repository to get all orders
+// // - Log retrieval event
+// // - Return orders list
 // func (s *OrderService) GetAllOrders() ([]*models.Order, error)
 
-// TODO: Implement GetOrderByID method - Retrieve specific order
-// - Validate order ID format
-// - Call repository to get order
-// - Log access event
-// - Return order or error if not found
+// // TODO: Implement GetOrderByID method - Retrieve specific order
+// // - Validate order ID format
+// // - Call repository to get order
+// // - Log access event
+// // - Return order or error if not found
 // func (s *OrderService) GetOrderByID(id string) (*models.Order, error)
 
-// TODO: Implement UpdateOrderStatus method - Update order status
-// - Validate order exists
-// - Validate status transition (business rules)
-// - Update order status
-// - Log status change business event
-// func (s *OrderService) UpdateOrderStatus(id string, req UpdateOrderStatusRequest) error
+// // TODO: Implement UpdateOrder method - Update existing order
+// // - Validate order exists
+// // - Validate input data
+// // - Update order data
+// // - Log update event
+// func (s *OrderService) UpdateOrder(id string, req UpdateOrderRequest) error
 
-// TODO: Implement GetSalesAggregations method - Calculate sales statistics
-// - Call repository for sales data
-// - Apply business logic for aggregation
-// - Log aggregation calculation
-// func (s *OrderService) GetSalesAggregations() (*models.SalesAggregation, error)
+// // TODO: Implement DeleteOrder method - Delete order
+// // - Validate order exists
+// // - Call repository to delete order
+// // - Log deletion event
+// func (s *OrderService) DeleteOrder(id string) error
 
-// TODO: Implement private business logic methods
-// - validateOrderItems(items []CreateOrderItemRequest) error - Validate order items
-// - checkInventoryAvailability(items []CreateOrderItemRequest) error - Check stock
-// - calculateTotalAmount(items []CreateOrderItemRequest) (float64, error) - Calculate total
-// - validateStatusTransition(currentStatus, newStatus models.OrderStatus) error - Validate status change
-// - updateInventoryForOrder(items []CreateOrderItemRequest) error - Update inventory after order
+// // TODO: Implement CloseOrder method - Close order
+// // - Validate order exists
+// // - Update order status to closed
+// // - Log close event
+// func (s *OrderService) CloseOrder(id string) error
+
+// // TODO: Implement private business logic methods
+// // - validateOrderData(req CreateOrderRequest) error - Validate order data
+// // - validateOrderItems(items []CreateOrderItemRequest) error - Validate order items
+// // - generateOrderID() string - Generate unique order ID
