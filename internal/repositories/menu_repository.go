@@ -1,5 +1,18 @@
 package repositories
 
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"hot-coffee/models"
+	"hot-coffee/pkg/logger"
+	"io"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
+)
+
 // TODO: Add imports when implementing:
 // import (
 //     "sync"
@@ -8,30 +21,31 @@ package repositories
 // )
 
 // TODO: Implement MenuRepository interface
-// type MenuRepositoryInterface interface {
-//     GetAll() ([]*models.MenuItem, error)
-//     Create(item *models.MenuItem) error
-//     Update(id string, item *models.MenuItem) error
-//     Delete(id string) error
-//     GetPopularItems() ([]*models.PopularItemAggregation, error)
-// }
+type MenuRepositoryInterface interface {
+	GetAll() ([]*models.MenuItem, error)
+	Create(item *models.MenuItem) error
+	Update(id string, item *models.MenuItem) error
+	Delete(id string) error
+}
 
 // TODO: Implement MenuRepository struct
-// type MenuRepository struct {
-//     items map[string]*models.MenuItem
-//     mutex sync.RWMutex
-//     logger *logger.Logger
-//     dataFilePath string
-// }
+type MenuRepository struct {
+	items        map[string]*models.MenuItem
+	mutex        sync.RWMutex
+	logger       *logger.Logger
+	dataFilePath string
+	loaded       bool
+}
 
 // TODO: Implement constructor with logger injection
-// func NewMenuRepository(logger *logger.Logger) *MenuRepository {
-//     return &MenuRepository{
-//         items: make(map[string]*models.MenuItem),
-//         logger: logger.WithComponent("menu_repository"),
-//         dataFilePath: "./data/menu_items.json",
-//     }
-// }
+func NewMenuRepository(logger *logger.Logger) *MenuRepository {
+	return &MenuRepository{
+		items:        make(map[string]*models.MenuItem),
+		logger:       logger.WithComponent("menu_repository"),
+		dataFilePath: "./data/menu_items.json",
+		loaded:       false,
+	}
+}
 
 // TODO: Implement GetAll method - Retrieve all menu items
 // - Load from JSON file if not in memory
@@ -71,3 +85,129 @@ package repositories
 // - generateItemID() string - Generate unique item ID
 // - validateMenuItem(item *models.MenuItem) error - Validate item data
 // - backupFile() error - Create backup before updates
+
+func (r *MenuRepository) loadFromFile() error {
+	err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(r.dataFilePath)
+	if err != nil {
+		r.items = make(map[string]*models.MenuItem)
+		r.loaded = true
+		return r.saveToFile()
+	}
+
+	file, err := os.Open(r.dataFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	if len(data) == 0 {
+		r.items = make(map[string]*models.MenuItem)
+		r.loaded = true
+		return nil
+	}
+
+	items := []*models.MenuItem{}
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		return err
+	}
+
+	r.items = make(map[string]*models.MenuItem)
+	for _, item := range items {
+		r.items[item.ID] = item
+	}
+
+	r.loaded = true
+	r.logger.Debug("Loaded menu items from file", "count", len(r.items))
+	return nil
+}
+
+func (r *MenuRepository) saveToFile() error {
+	items := make([]*models.MenuItem, 0, len(r.items))
+	for _, item := range r.items {
+		items = append(items, item)
+	}
+
+	data, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
+	if err != nil {
+		return err
+	}
+
+	tempFile := r.dataFilePath + ".tmp"
+	err = os.WriteFile(tempFile, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(tempFile, r.dataFilePath)
+	if err != nil {
+		return err
+	}
+
+	r.logger.Debug("Save menu items to file", "count", len(items))
+	return nil
+}
+
+func (r *MenuRepository) validateMenuItem(item *models.MenuItem) error {
+	if item == nil {
+		return errors.New("menu item cannot be nil")
+	}
+	if item.ID == "" {
+		return errors.New("item ID cannot be empty")
+	}
+	if item.Name == "" {
+		return errors.New("item name cannot be empty")
+	}
+	if item.Price < 0 {
+		return errors.New("price cannot be negative")
+	}
+
+	if len(item.Ingredients) == 0 {
+		return errors.New("menu item must have at least 1 ingridient")
+	}
+	for i, ingridient := range item.Ingredients {
+		if ingridient.IngredientID == "" {
+			return fmt.Errorf("ingridient %d: ID cannot be empty", i+1)
+		}
+		if ingridient.Quantity < 0 {
+			return fmt.Errorf("ingridient %d: quantity must be positive", i+1)
+		}
+	}
+
+	return nil
+}
+
+func (r *MenuRepository) backupFile() error {
+	_, err := os.Stat(r.dataFilePath)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	backupPath := r.dataFilePath + ".backup." + time.Now().Format("20060102_150405")
+
+	data, err := os.ReadFile(r.dataFilePath)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(backupPath, data, 0644)
+	if err != nil {
+		return err
+	}
+
+	r.logger.Debug("Created backup file", "backup_path", backupPath)
+	return nil
+}
