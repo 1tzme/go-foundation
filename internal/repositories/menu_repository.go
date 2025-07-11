@@ -26,6 +26,7 @@ type MenuRepositoryInterface interface {
 	Create(item *models.MenuItem) error
 	Update(id string, item *models.MenuItem) error
 	Delete(id string) error
+	GetByID(id string) (*models.MenuItem, error)
 }
 
 // TODO: Implement MenuRepository struct
@@ -51,7 +52,27 @@ func NewMenuRepository(logger *logger.Logger) *MenuRepository {
 // - Load from JSON file if not in memory
 // - Return copy of items slice
 // - Log retrieval event
-// func (r *MenuRepository) GetAll() ([]*models.MenuItem, error)
+func (r *MenuRepository) GetAll() ([]*models.MenuItem, error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		err := r.loadFromFile()
+		if err != nil {
+			// logger err
+			return nil, err
+		}
+	}
+
+	items := make([]*models.MenuItem, 0, len(r.items))
+	for _, item := range r.items {
+		itemCopy := *item
+		items = append(items, &itemCopy)
+	}
+
+	// logger info
+	return items, nil
+}
 
 // TODO: Implement Create method - Create a new menu item
 // - Generate unique item ID
@@ -59,19 +80,124 @@ func NewMenuRepository(logger *logger.Logger) *MenuRepository {
 // - Save to memory map
 // - Persist to JSON file atomically
 // - Log creation event
-// func (r *MenuRepository) Create(item *models.MenuItem) error
+func (r *MenuRepository) Create(item *models.MenuItem) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		err := r.loadFromFile()
+		if err != nil {
+			// logger err
+			return err
+		}
+	}
+
+	_, exists := r.items[item.ID]
+	if exists {
+		// logger warn
+		return fmt.Errorf("menu item with ID %s already exists", item.ID)
+	}
+
+	err := r.validateMenuItem(item)
+	if err != nil {
+		// logger err
+		return err
+	}
+
+	r.items[item.ID] = item
+
+	err = r.saveToFile()
+	if err != nil {
+		// logger err
+		return err
+	}
+
+	// logger info
+	return nil
+}
 
 // TODO: Implement Update method - Update existing menu item
 // - Validate item exists
 // - Update in memory and file
 // - Log update event
-// func (r *MenuRepository) Update(id string, item *models.MenuItem) error
+func (r *MenuRepository) Update(id string, item *models.MenuItem) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		err := r.loadFromFile()
+		if err != nil {
+			// logger err
+			return err
+		}
+	}
+
+	_, exists := r.items[id]
+	if !exists {
+		// logger warn
+		return fmt.Errorf("menu item with id %s not found", id)
+	}
+
+	err := r.validateMenuItem(item)
+	if err != nil {
+		// logger err
+		return err
+	}
+	err = r.backupFile()
+	if err != nil {
+		// logger warn
+	}
+	
+	item.ID = id
+	r.items[id] = item
+
+	err = r.saveToFile()
+	if err != nil {
+		// logger err
+		return err
+	}
+
+	// logger info
+	return nil
+}
 
 // TODO: Implement Delete method - Delete menu item
 // - Validate item exists
 // - Remove from memory and file
 // - Log deletion event
-// func (r *MenuRepository) Delete(id string) error
+func (r *MenuRepository) Delete(id string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		err := r.loadFromFile()
+		if err != nil {
+			// logger err
+			return err
+		}
+	}
+
+	_, exists := r.items[id]
+	if !exists {
+		// logger warn
+		return fmt.Errorf("menu item with id %s not found", id)
+	}
+	err := r.backupFile()
+	if err != nil {
+		return err
+	}
+
+	delete(r.items, id)
+
+	err = r.saveToFile()
+	if err != nil {
+		// logger err
+		return err
+	}
+
+	// logger info
+	return nil
+}
 
 // TODO: Implement GetPopularItems method - Get popular menu items aggregation
 // - Analyze order history

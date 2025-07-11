@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // TODO: Add import when implementing time-based fields:
 // import "time"
 
@@ -33,11 +35,11 @@ type MenuItemIngredient struct {
 // )
 
 // TODO: Add aggregation models based on README spec
-// type PopularItemAggregation struct {
-//     ItemID       string    `json:"item_id"`
-//     ItemName     string    `json:"item_name"`
-//     OrderCount   int       `json:"order_count"`
-//     TotalRevenue float64   `json:"total_revenue"`
-//     Rank         int       `json:"rank"`
-//     LastOrdered  time.Time `json:"last_ordered"`
-// }
+type PopularItemAggregation struct {
+    ItemID       string    `json:"item_id"`
+    ItemName     string    `json:"item_name"`
+    OrderCount   int       `json:"order_count"`
+    TotalRevenue float64   `json:"total_revenue"`
+    Rank         int       `json:"rank"`
+    LastOrdered  time.Time `json:"last_ordered"`
+}
