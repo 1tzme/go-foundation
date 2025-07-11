@@ -13,13 +13,6 @@ import (
 	"time"
 )
 
-// TODO: Add imports when implementing:
-// import (
-//     "sync"
-//     "hot-coffee/models"
-//     "hot-coffee/pkg/logger"
-// )
-
 // TODO: Implement MenuRepository interface
 type MenuRepositoryInterface interface {
 	GetAll() ([]*models.MenuItem, error)
@@ -57,9 +50,8 @@ func (r *MenuRepository) GetAll() ([]*models.MenuItem, error) {
 	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		err := r.loadFromFile()
-		if err != nil {
-			// logger err
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load menu items from file", "error", err)
 			return nil, err
 		}
 	}
@@ -70,7 +62,7 @@ func (r *MenuRepository) GetAll() ([]*models.MenuItem, error) {
 		items = append(items, &itemCopy)
 	}
 
-	// logger info
+	r.logger.Info("Retrieved all menu items", "count", len(items))
 	return items, nil
 }
 
@@ -85,34 +77,31 @@ func (r *MenuRepository) Create(item *models.MenuItem) error {
 	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		err := r.loadFromFile()
-		if err != nil {
-			// logger err
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load menu items from file", "error", err)
 			return err
 		}
 	}
 
 	_, exists := r.items[item.ID]
 	if exists {
-		// logger warn
+		r.logger.Warn("Attempted to create duplicate menu item", "item_id", item.ID)
 		return fmt.Errorf("menu item with ID %s already exists", item.ID)
 	}
 
-	err := r.validateMenuItem(item)
-	if err != nil {
-		// logger err
+	if err := r.validateMenuItem(item); err != nil {
+		r.logger.Error("Failed to validate menu item", "error", err, "item_id", item.ID)
 		return err
 	}
 
 	r.items[item.ID] = item
 
-	err = r.saveToFile()
-	if err != nil {
-		// logger err
+	if err := r.saveToFile(); err != nil {
+		r.logger.Error("Failed to save menu items after create", "error", err)
 		return err
 	}
 
-	// logger info
+	r.logger.Info("Created new menu item", "item_id", item.ID, "name", item.Name, "price", item.Price)
 	return nil
 }
 
@@ -125,39 +114,35 @@ func (r *MenuRepository) Update(id string, item *models.MenuItem) error {
 	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		err := r.loadFromFile()
-		if err != nil {
-			// logger err
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load menu items from file", "error", err)
 			return err
 		}
 	}
 
 	_, exists := r.items[id]
 	if !exists {
-		// logger warn
+		r.logger.Warn("Attempted to update non existing menu item", "item_id", id)
 		return fmt.Errorf("menu item with id %s not found", id)
 	}
 
-	err := r.validateMenuItem(item)
-	if err != nil {
-		// logger err
+	if err := r.validateMenuItem(item); err != nil {
+		r.logger.Error("Failed to validate menu item", "error", err, "item_id", id)
 		return err
 	}
-	err = r.backupFile()
-	if err != nil {
-		// logger warn
+	if err := r.backupFile(); err != nil {
+		r.logger.Warn("Failed to create backup file", "error", err)
 	}
 	
 	item.ID = id
 	r.items[id] = item
 
-	err = r.saveToFile()
-	if err != nil {
-		// logger err
+	if err := r.saveToFile(); err != nil {
+		r.logger.Error("Failed to save menu items after update", "error", err, "item_id", id)
 		return err
 	}
 
-	// logger info
+	r.logger.Info("Updated menu item", "item_id", id, "name", item.Name, "price", item.Price)
 	return nil
 }
 
@@ -170,32 +155,29 @@ func (r *MenuRepository) Delete(id string) error {
 	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		err := r.loadFromFile()
-		if err != nil {
-			// logger err
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load menu items from file", "error", err)
 			return err
 		}
 	}
 
-	_, exists := r.items[id]
+	item, exists := r.items[id]
 	if !exists {
-		// logger warn
+		r.logger.Warn("Attempted to delete non-existent menu item", "item_id", id)
 		return fmt.Errorf("menu item with id %s not found", id)
 	}
-	err := r.backupFile()
-	if err != nil {
-		return err
+	if err := r.backupFile(); err != nil {
+		r.logger.Warn("Failed to create backup before delete", "error", err)
 	}
 
 	delete(r.items, id)
 
-	err = r.saveToFile()
-	if err != nil {
-		// logger err
+	if err := r.saveToFile(); err != nil {
+		r.logger.Error("Failed to save menu items after delete", "error", err)
 		return err
 	}
 
-	// logger info
+	r.logger.Info("Deleted menu item", "item_id", id, "name", item.Name)
 	return nil
 }
 
@@ -213,13 +195,11 @@ func (r *MenuRepository) Delete(id string) error {
 // - backupFile() error - Create backup before updates
 
 func (r *MenuRepository) loadFromFile() error {
-	err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
-	if err != nil {
-		return err
+	if err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755); err != nil {
+		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
-	_, err = os.Stat(r.dataFilePath)
-	if err != nil {
+	if _, err := os.Stat(r.dataFilePath); err != nil {
 		r.items = make(map[string]*models.MenuItem)
 		r.loaded = true
 		return r.saveToFile()
@@ -227,13 +207,13 @@ func (r *MenuRepository) loadFromFile() error {
 
 	file, err := os.Open(r.dataFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open menu items file: %v", err)
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open menu items file: %v", err)
 	}
 
 	if len(data) == 0 {
@@ -243,9 +223,8 @@ func (r *MenuRepository) loadFromFile() error {
 	}
 
 	items := []*models.MenuItem{}
-	err = json.Unmarshal(data, &items)
-	if err != nil {
-		return err
+	if err = json.Unmarshal(data, &items); err != nil {
+		return fmt.Errorf("failed to unmarshal menu items: %v", err)
 	}
 
 	r.items = make(map[string]*models.MenuItem)
@@ -266,22 +245,19 @@ func (r *MenuRepository) saveToFile() error {
 
 	data, err := json.Marshal(items)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal menu items: %v", err)
 	}
-	err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
-	if err != nil {
-		return err
+	if err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0755); err != nil {
+		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
 	tempFile := r.dataFilePath + ".tmp"
-	err = os.WriteFile(tempFile, data, 0644)
-	if err != nil {
-		return err
+	if err = os.WriteFile(tempFile, data, 0644); err != nil {
+		return fmt.Errorf("failed to write temporary menu items file: %v", err)
 	}
 
-	err = os.Rename(tempFile, r.dataFilePath)
-	if err != nil {
-		return err
+	if err = os.Rename(tempFile, r.dataFilePath); err != nil {
+		return fmt.Errorf("failed to rename menu items file: %v", err)
 	}
 
 	r.logger.Debug("Save menu items to file", "count", len(items))
@@ -318,8 +294,7 @@ func (r *MenuRepository) validateMenuItem(item *models.MenuItem) error {
 }
 
 func (r *MenuRepository) backupFile() error {
-	_, err := os.Stat(r.dataFilePath)
-	if os.IsNotExist(err) {
+	if _, err := os.Stat(r.dataFilePath); os.IsNotExist(err) {
 		return nil
 	}
 
@@ -327,11 +302,10 @@ func (r *MenuRepository) backupFile() error {
 
 	data, err := os.ReadFile(r.dataFilePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read original file: %v", err)
 	}
-	err = os.WriteFile(backupPath, data, 0644)
-	if err != nil {
-		return err
+	if err = os.WriteFile(backupPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to create backup file, %v", err)
 	}
 
 	r.logger.Debug("Created backup file", "backup_path", backupPath)
