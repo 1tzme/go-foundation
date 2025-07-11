@@ -6,14 +6,16 @@ package models
 type MenuItem struct {
 	ID          string               `json:"product_id"`
 	Name        string               `json:"name"`
+	Description string               `json:"description"`
 	Price       float64              `json:"price"`
 	Ingredients []MenuItemIngredient `json:"ingredients"`
-	// TODO: Add additional fields based on README spec:
-	// Category    MenuCategory `json:"category"`
-	// Available   bool         `json:"available"`
-	// CreatedAt   time.Time    `json:"created_at"`
-	// UpdatedAt   time.Time    `json:"updated_at"`
 }
+
+// TODO: Add additional fields based on README spec:
+// Category    MenuCategory `json:"category"`
+// Available   bool         `json:"available"`
+// CreatedAt   time.Time    `json:"created_at"`
+// UpdatedAt   time.Time    `json:"updated_at"`
 
 type MenuItemIngredient struct {
 	IngredientID string  `json:"ingredient_id"`
