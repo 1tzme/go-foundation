@@ -63,7 +63,7 @@ func (s *OrderService) CreateOrder(req CreateOrderRequest) (*models.Order, error
 		ID:           orderID,
 		CustomerName: req.CustomerName,
 		Items:        make([]models.OrderItem, len(req.Items)),
-		Status:       "pending",
+		Status:       "open",
 		CreatedAt:    time.Now().Format(time.RFC3339),
 	}
 
@@ -218,7 +218,7 @@ func (s *OrderService) validateUpdateOrderData(req UpdateOrderRequest) error {
 	}
 
 	// Validate status values
-	validStatuses := []string{"pending", "preparing", "ready", "completed", "cancelled", "closed"}
+	validStatuses := []string{"open", "closed"}
 	statusValid := false
 	for _, status := range validStatuses {
 		if req.Status == status {
