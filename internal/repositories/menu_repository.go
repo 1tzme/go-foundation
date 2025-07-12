@@ -181,6 +181,28 @@ func (r *MenuRepository) Delete(id string) error {
 	return nil
 }
 
+func (r *MenuRepository) GetByID(id string) (*models.MenuItem, error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.loaded {
+		if err := r.loadFromFile(); err != nil {
+			r.logger.Error("Failed to load menu items from file", "error", err)
+			return nil, err
+		}
+	}
+
+	item, exists := r.items[id]
+	if !exists {
+		r.logger.Warn("Menu item not found", "item_id", id)
+		return nil, fmt.Errorf("menu item with id %s not found", id)
+	}
+
+	itemCopy := *item
+	r.logger.Info("Retrieved menu item", "item_id", id, "name", item.Name)
+	return &itemCopy, nil
+}
+
 // TODO: Implement GetPopularItems method - Get popular menu items aggregation
 // - Analyze order history
 // - Count item frequencies
