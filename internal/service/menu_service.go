@@ -54,7 +54,18 @@ func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logge
 // - Call repository to get all menu items
 // - Apply business logic for availability
 // - Log retrieval event
-// func (s *MenuService) GetAllMenuItems() ([]*models.MenuItem, error)
+func (s *MenuService) GetAllMenuItems() ([]*models.MenuItem, error) {
+	s.logger.Info("Fetching all menu items from repository")
+
+	items, err := s.menuRepo.GetAll()
+	if err != nil {
+		s.logger.Error("Failed to get menu items from repository", "error", err)
+		return nil, err
+	}
+
+	s.logger.Info("Fetched menu items", "count", len(items))
+	return items, nil
+}
 
 // TODO: Implement CreateMenuItem method - Create new menu item
 // - Validate menu item data (name, price > 0, valid category)
@@ -62,7 +73,32 @@ func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logge
 // - Set created timestamp
 // - Call repository to create
 // - Log business event
-// func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error)
+func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error) {
+	err := s.validateCreateMenuItemData(req)
+	if err != nil {
+		// logger warn
+		return nil, err
+	}
+
+	item := &models.MenuItem{
+		ID: id,
+		Name: req.Name,
+		Description: req.Description,
+		Category: req.Category,
+		Price: req.Price,
+		Available: req.Available,
+		Ingredients: req.Ingridients,
+	}
+
+	err = s.menuRepo.Create(item)
+	if err != nil {
+		// logger error
+		return nil, err
+	}
+
+	// logger info
+	return item, nil
+}
 
 // TODO: Implement UpdateMenuItem method - Update existing menu item
 // - Validate menu item exists
@@ -70,27 +106,79 @@ func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logge
 // - Set updated timestamp
 // - Call repository to update
 // - Log business event
-// func (s *MenuService) UpdateMenuItem(id string, req MenuItemRequest) error
+func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error {
+	err := s.validateUpdateMenuItemData(req)
+	if err != nil {
+		// logger warn
+		return err
+	}
+
+	_, err = s.menuRepo.GetByID(id)
+	if err != nil {
+		// logger error
+		return err
+	}
+
+	item := &models.MenuItem{
+		ID:id,
+		Name: *req.Name,
+		Description: *req.Description,
+		Category: *req.Category,
+		Price: *req.Price,
+		Available: *req.Available,
+		Ingredients: *req.Ingridients,
+	}
+
+	err = s.menuRepo.Update(id, item)
+	if err != nil {
+		// logger error
+		return err
+	}
+
+	// logger info
+	return nil
+}
 
 // TODO: Implement DeleteMenuItem method - Delete menu item
 // - Validate menu item exists
 // - Check if item is referenced in active orders
 // - Call repository to delete
 // - Log business event
-// func (s *MenuService) DeleteMenuItem(id string) error
+func (s *MenuService) DeleteMenuItem(id string) error {
+	// logger info
+
+	_, err := s.menuRepo.GetByID(id)
+	if err != nil {
+		// logger warn
+		return err
+	}
+
+	err = s.menuRepo.Delete(id)
+	if err != nil {
+		// logger err
+		return err
+	}
+
+	// logger info
+	return nil
+}
+
+func (s *MenuService) GetMenuItem(id string) (*models.MenuItem, error) {
+	item, err := s.menuRepo.GetByID(id)
+	if err != nil {
+		// logger warn
+		return nil, err
+	}
+
+	//logger info
+	return item, nil
+}
 
 // TODO: Implement GetPopularItems method - Get popular menu items
 // - Call repository for popular items aggregation
 // - Apply business logic for ranking
 // - Log aggregation calculation
 // func (s *MenuService) GetPopularItems() ([]*models.PopularItemAggregation, error)
-
-// TODO: Implement private business logic methods
-// - validateMenuItemData(req MenuItemRequest) error - Validate menu item
-// - checkDuplicateName(name string, excludeID string) error - Check for duplicate names
-// - isMenuItemInActiveOrders(id string) (bool, error) - Check if item is in active orders
-// - validateMenuCategory(category models.MenuCategory) error - Validate category
-// - validatePrice(price float64) error - Validate price is positive
 
 func (s *MenuService) validateCreateMenuItemData(req CreateMenuItemRequest) error {
 	if req.Name == "" {
