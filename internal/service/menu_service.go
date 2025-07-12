@@ -1,6 +1,5 @@
 package service
 
-// TODO: Add imports when implementing:
 import (
 	"fmt"
 	"hot-coffee/internal/repositories"
@@ -26,7 +25,6 @@ type UpdateMenuItemRequest struct {
 	Ingridients *[]models.MenuItemIngredient `json:"ingridients"`
 }
 
-// TODO: Implement MenuService interface
 type MenuServiceInterface interface {
 	GetAllMenuItems() ([]*models.MenuItem, error)
 	GetMenuItem(id string) ()
@@ -36,13 +34,11 @@ type MenuServiceInterface interface {
 	GetPopularItems() ([]*models.PopularItemAggregation, error)
 }
 
-// TODO: Implement MenuService struct
 type MenuService struct {
 	menuRepo  repositories.MenuRepositoryInterface
 	logger    *logger.Logger
 }
 
-// TODO: Implement constructor with logger injection
 func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *MenuService {
 	return &MenuService{
 		menuRepo:  menuRepo,
@@ -50,10 +46,7 @@ func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logge
 	}
 }
 
-// TODO: Implement GetAllMenuItems method - Retrieve all menu items
-// - Call repository to get all menu items
-// - Apply business logic for availability
-// - Log retrieval event
+// GetAllMenuItems retrieves all menu items
 func (s *MenuService) GetAllMenuItems() ([]*models.MenuItem, error) {
 	s.logger.Info("Fetching all menu items from repository")
 
@@ -67,16 +60,12 @@ func (s *MenuService) GetAllMenuItems() ([]*models.MenuItem, error) {
 	return items, nil
 }
 
-// TODO: Implement CreateMenuItem method - Create new menu item
-// - Validate menu item data (name, price > 0, valid category)
-// - Check for duplicate names
-// - Set created timestamp
-// - Call repository to create
-// - Log business event
+// CreateMenuItem creates new menu item
 func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error) {
-	err := s.validateCreateMenuItemData(req)
-	if err != nil {
-		// logger warn
+	s.logger.Info("Creating menu item", "id", id, "name", req.Name, "price", req.Price)
+	
+	if err := s.validateCreateMenuItemData(req); err != nil {
+		s.logger.Warn("Create failed: invalid data", "id", id, "error", err)
 		return nil, err
 	}
 
@@ -90,32 +79,26 @@ func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*mod
 		Ingredients: req.Ingridients,
 	}
 
-	err = s.menuRepo.Create(item)
-	if err != nil {
-		// logger error
+	if err := s.menuRepo.Create(item); err != nil {
+		s.logger.Error("Failed to create menu item in repository", "id", id, "error", err)
 		return nil, err
 	}
 
-	// logger info
+	s.logger.Info("Menu item created successfully", "id", id, "name", req.Name)
 	return item, nil
 }
 
-// TODO: Implement UpdateMenuItem method - Update existing menu item
-// - Validate menu item exists
-// - Validate updated data
-// - Set updated timestamp
-// - Call repository to update
-// - Log business event
+// UpdateMenuItem updates existing menu item
 func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error {
-	err := s.validateUpdateMenuItemData(req)
-	if err != nil {
-		// logger warn
+	s.logger.Info("Updating menu item", "id", id, "name", req.Name, "price", req.Price)
+	
+	if err := s.validateUpdateMenuItemData(req); err != nil {
+		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
 		return err
 	}
 
-	_, err = s.menuRepo.GetByID(id)
-	if err != nil {
-		// logger error
+	if _, err := s.menuRepo.GetByID(id); err != nil {
+		s.logger.Error("Failed to get existing menu item", "id", id, "error", err)
 		return err
 	}
 
@@ -129,48 +112,42 @@ func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error
 		Ingredients: *req.Ingridients,
 	}
 
-	err = s.menuRepo.Update(id, item)
-	if err != nil {
-		// logger error
+	if err := s.menuRepo.Update(id, item); err != nil {
+		s.logger.Error("Failed to update menu item", "id", id, "error", err)
 		return err
 	}
 
-	// logger info
+	s.logger.Info("Menu item updated successfully", "id", id, "name", req.Name)
 	return nil
 }
 
-// TODO: Implement DeleteMenuItem method - Delete menu item
-// - Validate menu item exists
-// - Check if item is referenced in active orders
-// - Call repository to delete
-// - Log business event
+// DeleteMenuItem deletes menu item
 func (s *MenuService) DeleteMenuItem(id string) error {
-	// logger info
+	s.logger.Info("Deleting menu item", "id", id)
 
-	_, err := s.menuRepo.GetByID(id)
-	if err != nil {
-		// logger warn
+	if _, err := s.menuRepo.GetByID(id); err != nil {
+        s.logger.Warn("Menu item not found for deletion", "id", id, "error", err)
 		return err
 	}
 
-	err = s.menuRepo.Delete(id)
-	if err != nil {
-		// logger err
+	if err := s.menuRepo.Delete(id); err != nil {
+        s.logger.Error("Failed to delete menu item from repository", "id", id, "error", err)
 		return err
 	}
 
-	// logger info
+    s.logger.Info("Menu item deleted successfully", "id", id)
 	return nil
 }
 
+// GetMenuItem retrieves menu item by ID
 func (s *MenuService) GetMenuItem(id string) (*models.MenuItem, error) {
 	item, err := s.menuRepo.GetByID(id)
 	if err != nil {
-		// logger warn
+        s.logger.Warn("Menu item not found", "id", id, "error", err)
 		return nil, err
 	}
 
-	//logger info
+    s.logger.Info("Fetched menu item successfully", "id", id, "name", item.Name)
 	return item, nil
 }
 
