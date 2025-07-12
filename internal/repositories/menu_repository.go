@@ -243,7 +243,7 @@ func (r *MenuRepository) saveToFile() error {
 		items = append(items, item)
 	}
 
-	data, err := json.Marshal(items)
+	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal menu items: %v", err)
 	}
