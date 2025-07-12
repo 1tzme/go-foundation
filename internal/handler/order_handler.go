@@ -1,84 +1,289 @@
 package handler
 
-// import (
-// 	"hot-coffee/internal/service"
-// 	"hot-coffee/pkg/logger"
-// 	"net/http"
-// )
+import (
+	"encoding/json"
+	"fmt"
+	"hot-coffee/internal/service"
+	"hot-coffee/pkg/logger"
+	"net/http"
+	"strings"
+	"time"
+)
 
-// // TODO: Add imports when implementing:
-// // import (
-// //     "encoding/json"
-// //     "net/http"
-// //     "hot-coffee/internal/service"
-// //     "hot-coffee/pkg/logger"
-// //     "time"
-// // )
+// OrderHandler struct
+type OrderHandler struct {
+	orderService service.OrderServiceInterface
+	logger       *logger.Logger
+}
 
-// // TODO: Implement OrderHandler struct
-// type OrderHandler struct {
-// 	orderService service.OrderServiceInterface
-// 	logger       *logger.Logger
-// }
+// NewOrderHandler creates a new OrderHandler with the given service and logger
+func NewOrderHandler(orderService service.OrderServiceInterface, logger *logger.Logger) *OrderHandler {
+	return &OrderHandler{
+		orderService: orderService,
+		logger:       logger.WithComponent("order_handler"),
+	}
+}
 
-// // TODO: Implement constructor with logger injection
-// func NewOrderHandler(orderService service.OrderServiceInterface, logger *logger.Logger) *OrderHandler {
-// 	return &OrderHandler{
-// 		orderService: orderService,
-// 		logger:       logger.WithComponent("order_handler"),
-// 	}
-// }
+// CreateOrder handles POST /api/v1/orders
+func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
 
-// // TODO: Implement CreateOrder HTTP handler - POST /api/v1/orders
-// // - Parse JSON request body
-// // - Validate request format
-// // - Call order service to create order
-// // - Return 201 Created with order data or 400/500 on error
-// // - Log HTTP request/response
-// func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request)
+	var createReq service.CreateOrderRequest
+	if err := h.parseRequestBody(r, &createReq); err != nil {
+		h.logger.Warn("Invalid request body for create order", "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
 
-// // TODO: Implement GetAllOrders HTTP handler - GET /api/v1/orders
-// // - Call order service to get all orders
-// // - Return 200 OK with orders list or 500 on error
-// // - Log HTTP request/response
-// func (h *OrderHandler) GetAllOrders(w http.ResponseWriter, r *http.Request)
+	order, err := h.orderService.CreateOrder(createReq)
+	if err != nil {
+		h.logger.Warn("Failed to create order", "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, err.Error())
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
 
-// // TODO: Implement GetOrderByID HTTP handler - GET /api/v1/orders/{id}
-// // - Extract order ID from URL path
-// // - Validate ID format
-// // - Call order service to get order
-// // - Return 200 OK with order data, 404 if not found, or 500 on error
-// // - Log HTTP request/response
-// func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request)
+	h.writeJSONResponse(w, http.StatusCreated, order)
+	reqCtx.StatusCode = http.StatusCreated
+	h.logger.LogResponse(reqCtx)
+}
 
-// // TODO: Implement UpdateOrder HTTP handler - PUT /api/v1/orders/{id}
-// // - Extract order ID from URL path
-// // - Parse JSON request body
-// // - Validate request format
-// // - Call order service to update order
-// // - Return 200 OK or appropriate error status
-// // - Log HTTP request/response
-// func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request)
+// GetAllOrders handles GET /api/v1/orders
+func (h *OrderHandler) GetAllOrders(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
 
-// // TODO: Implement DeleteOrder HTTP handler - DELETE /api/v1/orders/{id}
-// // - Extract order ID from URL path
-// // - Validate ID format
-// // - Call order service to delete order
-// // - Return 200 OK or appropriate error status
-// // - Log HTTP request/response
-// func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request)
+	orders, err := h.orderService.GetAllOrders()
+	if err != nil {
+		h.logger.Error("Failed to get all orders", "error", err)
+		h.writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch orders")
+		reqCtx.StatusCode = http.StatusInternalServerError
+		h.logger.LogResponse(reqCtx)
+		return
+	}
 
-// // TODO: Implement CloseOrder HTTP handler - POST /api/v1/orders/{id}/close
-// // - Extract order ID from URL path
-// // - Validate ID format
-// // - Call order service to close order
-// // - Return 200 OK or appropriate error status
-// // - Log HTTP request/response
-// func (h *OrderHandler) CloseOrder(w http.ResponseWriter, r *http.Request)
+	h.writeJSONResponse(w, http.StatusOK, orders)
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
 
-// // TODO: Implement private helper methods
-// // - writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) - Write JSON response
-// // - writeErrorResponse(w http.ResponseWriter, statusCode int, message string) - Write error response
-// // - parseRequestBody(r *http.Request, target interface{}) error - Parse JSON request body
-// // - extractIDFromPath(r *http.Request) string - Extract ID from URL path
-// // - validateOrderID(id string) error - Validate order ID format
+// GetOrderByID handles GET /api/v1/orders/{id}
+func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
+
+	id := h.extractIDFromPath(r)
+	if err := h.validateOrderID(id); err != nil {
+		h.logger.Warn("Invalid order ID", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid order ID")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	order, err := h.orderService.GetOrderByID(id)
+	if err != nil {
+		h.logger.Warn("Order not found", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusNotFound, "Order not found")
+		reqCtx.StatusCode = http.StatusNotFound
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	h.writeJSONResponse(w, http.StatusOK, order)
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
+
+// UpdateOrder handles PUT /api/v1/orders/{id}
+func (h *OrderHandler) UpdateOrder(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
+
+	id := h.extractIDFromPath(r)
+	if err := h.validateOrderID(id); err != nil {
+		h.logger.Warn("Invalid order ID", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid order ID")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	var updateReq service.UpdateOrderRequest
+	if err := h.parseRequestBody(r, &updateReq); err != nil {
+		h.logger.Warn("Invalid request body for update order", "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	err := h.orderService.UpdateOrder(id, updateReq)
+	if err != nil {
+		h.logger.Warn("Failed to update order", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, err.Error())
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	h.writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Order updated"})
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
+
+// DeleteOrder handles DELETE /api/v1/orders/{id}
+func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
+
+	id := h.extractIDFromPath(r)
+	if err := h.validateOrderID(id); err != nil {
+		h.logger.Warn("Invalid order ID", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid order ID")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	err := h.orderService.DeleteOrder(id)
+	if err != nil {
+		h.logger.Warn("Failed to delete order", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusNotFound, "Order not found")
+		reqCtx.StatusCode = http.StatusNotFound
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	h.writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Order deleted"})
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
+
+// CloseOrder handles POST /api/v1/orders/{id}/close
+func (h *OrderHandler) CloseOrder(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime:  time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
+
+	id := h.extractIDFromPath(r)
+	if err := h.validateOrderID(id); err != nil {
+		h.logger.Warn("Invalid order ID", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusBadRequest, "Invalid order ID")
+		reqCtx.StatusCode = http.StatusBadRequest
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	err := h.orderService.CloseOrder(id)
+	if err != nil {
+		h.logger.Warn("Failed to close order", "id", id, "error", err)
+		h.writeErrorResponse(w, http.StatusNotFound, "Order not found")
+		reqCtx.StatusCode = http.StatusNotFound
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	h.writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Order closed"})
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
+
+// Private helper methods
+
+// writeJSONResponse writes JSON response with given status code and data
+func (h *OrderHandler) writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	if data != nil {
+		if err := json.NewEncoder(w).Encode(data); err != nil {
+			h.logger.Error("Failed to encode JSON response", "error", err)
+			http.Error(w, `{"error":"failed to encode response"}`, http.StatusInternalServerError)
+		}
+	}
+}
+
+// writeErrorResponse writes an error response with given status code and message
+func (h *OrderHandler) writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	resp := map[string]string{"error": message}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error("Failed to encode error response", "error", err)
+	}
+}
+
+// parseRequestBody parses JSON request body into the target struct
+func (h *OrderHandler) parseRequestBody(r *http.Request, target interface{}) error {
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
+	return decoder.Decode(target)
+}
+
+// extractIDFromPath extracts ID from URL path (expects /api/v1/orders/{id} or /api/v1/orders/{id}/close)
+func (h *OrderHandler) extractIDFromPath(r *http.Request) string {
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/orders/")
+
+	// Handle /api/v1/orders/{id}/close case
+	path = strings.TrimSuffix(path, "/close")
+
+	// Split by '/' and return the first segment (the ID)
+	parts := strings.Split(path, "/")
+	if len(parts) > 0 && parts[0] != "" {
+		return parts[0]
+	}
+
+	return ""
+}
+
+// validateOrderID validates order ID format
+func (h *OrderHandler) validateOrderID(id string) error {
+	if id == "" {
+		return fmt.Errorf("order ID cannot be empty")
+	}
+
+	// Basic validation - ID should start with "ord_" prefix
+	if !strings.HasPrefix(id, "ord_") {
+		return fmt.Errorf("invalid order ID format")
+	}
+
+	// Check minimum length (ord_ + timestamp should be longer)
+	if len(id) < 8 {
+		return fmt.Errorf("order ID too short")
+	}
+
+	return nil
+}
