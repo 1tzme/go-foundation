@@ -5,6 +5,8 @@ import (
 	"hot-coffee/internal/repositories"
 	"hot-coffee/models"
 	"hot-coffee/pkg/logger"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -248,5 +250,30 @@ func (s *OrderService) validateOrderItems(items []CreateOrderItemRequest) error 
 
 // generateOrderID generates a unique order ID
 func (s *OrderService) generateOrderID() string {
-	return fmt.Sprintf("ord_%d", time.Now().UnixNano())
+	// Get all existing orders to determine next ID
+	orders, err := s.orderRepo.GetAll()
+	if err != nil {
+		// If we can't get orders, start with order1
+		return "order1"
+	}
+
+	// If no orders exist, start with order1
+	if len(orders) == 0 {
+		return "order1"
+	}
+
+	// Find the highest order number
+	maxOrderNum := 0
+	for _, order := range orders {
+		if strings.HasPrefix(order.ID, "order") {
+			// Extract number from "order123" format
+			numStr := strings.TrimPrefix(order.ID, "order")
+			if num, err := strconv.Atoi(numStr); err == nil && num > maxOrderNum {
+				maxOrderNum = num
+			}
+		}
+	}
+
+	// Return next sequential order ID
+	return fmt.Sprintf("order%d", maxOrderNum+1)
 }

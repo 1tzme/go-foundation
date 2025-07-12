@@ -6,6 +6,7 @@ import (
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -275,14 +276,20 @@ func (h *OrderHandler) validateOrderID(id string) error {
 		return fmt.Errorf("order ID cannot be empty")
 	}
 
-	// Basic validation - ID should start with "ord_" prefix
-	if !strings.HasPrefix(id, "ord_") {
+	// Basic validation - ID should start with "order" prefix
+	if !strings.HasPrefix(id, "order") {
 		return fmt.Errorf("invalid order ID format")
 	}
 
-	// Check minimum length (ord_ + timestamp should be longer)
-	if len(id) < 8 {
-		return fmt.Errorf("order ID too short")
+	// Check that what follows "order" is a number
+	numStr := strings.TrimPrefix(id, "order")
+	if numStr == "" {
+		return fmt.Errorf("order ID missing number")
+	}
+
+	// Validate that the suffix is a valid number
+	if _, err := strconv.Atoi(numStr); err != nil {
+		return fmt.Errorf("invalid order ID format: %s", id)
 	}
 
 	return nil
