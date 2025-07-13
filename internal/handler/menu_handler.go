@@ -9,13 +9,11 @@ import (
 	"time"
 )
 
-// TODO: Implement MenuHandler struct
 type MenuHandler struct {
 	menuService service.MenuServiceInterface
 	logger      *logger.Logger
 }
 
-// TODO: Implement constructor with logger injection
 func NewMenuHandler(menuService service.MenuServiceInterface, logger *logger.Logger) *MenuHandler {
 	return &MenuHandler{
 		menuService: menuService,
@@ -23,10 +21,7 @@ func NewMenuHandler(menuService service.MenuServiceInterface, logger *logger.Log
 	}
 }
 
-// TODO: Implement GetAllMenuItems HTTP handler - GET /api/v1/menu
-// - Call menu service to get all items
-// - Return 200 OK with menu items list or 500 on error
-// - Log HTTP request/response
+// GetAllMenuItems handles GET /api/v1/menu
 func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
 		Method:     r.Method,
@@ -50,6 +45,7 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogResponse(reqCtx)
 }
 
+// GetMenuItem handles GET /api/v1/menu/{id}
 func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
 		Method: r.Method,
@@ -74,12 +70,7 @@ func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogResponse(reqCtx)
 }
 
-// TODO: Implement CreateMenuItem HTTP handler - POST /api/v1/menu
-// - Parse JSON request body
-// - Validate request format
-// - Call menu service to create item
-// - Return 201 Created with item data or 400/500 on error
-// - Log HTTP request/response
+// CreateMenuItem handles POST /api/v1/menu
 func (h *MenuHandler) CreateMenuItem(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
 		Method:     r.Method,
@@ -113,13 +104,7 @@ func (h *MenuHandler) CreateMenuItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogResponse(reqCtx)
 }
 
-// TODO: Implement UpdateMenuItem HTTP handler - PUT /api/v1/menu/{id}
-// - Extract item ID from URL path
-// - Parse JSON request body
-// - Validate request format
-// - Call menu service to update item
-// - Return 200 OK or appropriate error status
-// - Log HTTP request/response
+// UpdateMenuItem handles PUT /api/v1/menu/{id}
 func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
 		Method:     r.Method,
@@ -158,12 +143,7 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogResponse(reqCtx)
 }
 
-// TODO: Implement DeleteMenuItem HTTP handler - DELETE /api/v1/menu/{id}
-// - Extract item ID from URL path
-// - Validate ID format
-// - Call menu service to delete item
-// - Return 204 No Content, 404 if not found, or 500 on error
-// - Log HTTP request/response
+// DeleteMenuItem handles DELETE /api/v1/menu/{id}
 func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
 		Method:     r.Method,
@@ -194,13 +174,9 @@ func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request) {
 // - Log HTTP request/response
 // func (h *MenuHandler) GetPopularItems(w http.ResponseWriter, r *http.Request)
 
-// TODO: Implement private helper methods
-// - writeJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) - Write JSON response
-// - writeErrorResponse(w http.ResponseWriter, statusCode int, message string) - Write error response
-// - parseRequestBody(r *http.Request, target interface{}) error - Parse JSON request body
-// - extractIDFromPath(r *http.Request) string - Extract ID from URL path
-// - validateMenuItemID(id string) error - Validate menu item ID format
+// Private helper methods
 
+// generateMenuItemID - Generates menu item ID based on item name
 func generateMenuItemID(name string) string {
 	cleaned := strings.ToLower(name)
 	reg := regexp.MustCompile(`[^a-z0-9]+`)
