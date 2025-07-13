@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-// TODO: Implement MenuRepository interface
 type MenuRepositoryInterface interface {
 	GetAll() ([]*models.MenuItem, error)
 	Create(item *models.MenuItem) error
@@ -22,7 +21,6 @@ type MenuRepositoryInterface interface {
 	GetByID(id string) (*models.MenuItem, error)
 }
 
-// TODO: Implement MenuRepository struct
 type MenuRepository struct {
 	items        map[string]*models.MenuItem
 	mutex        sync.RWMutex
@@ -31,7 +29,6 @@ type MenuRepository struct {
 	loaded       bool
 }
 
-// TODO: Implement constructor with logger injection
 func NewMenuRepository(logger *logger.Logger) *MenuRepository {
 	return &MenuRepository{
 		items:        make(map[string]*models.MenuItem),
@@ -41,10 +38,7 @@ func NewMenuRepository(logger *logger.Logger) *MenuRepository {
 	}
 }
 
-// TODO: Implement GetAll method - Retrieve all menu items
-// - Load from JSON file if not in memory
-// - Return copy of items slice
-// - Log retrieval event
+// GetAll - retrieves all menu items
 func (r *MenuRepository) GetAll() ([]*models.MenuItem, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -66,12 +60,7 @@ func (r *MenuRepository) GetAll() ([]*models.MenuItem, error) {
 	return items, nil
 }
 
-// TODO: Implement Create method - Create a new menu item
-// - Generate unique item ID
-// - Validate item data
-// - Save to memory map
-// - Persist to JSON file atomically
-// - Log creation event
+// Create - creates a new menu item
 func (r *MenuRepository) Create(item *models.MenuItem) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -105,10 +94,7 @@ func (r *MenuRepository) Create(item *models.MenuItem) error {
 	return nil
 }
 
-// TODO: Implement Update method - Update existing menu item
-// - Validate item exists
-// - Update in memory and file
-// - Log update event
+// Update - updates existing menu item
 func (r *MenuRepository) Update(id string, item *models.MenuItem) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -133,7 +119,7 @@ func (r *MenuRepository) Update(id string, item *models.MenuItem) error {
 	if err := r.backupFile(); err != nil {
 		r.logger.Warn("Failed to create backup file", "error", err)
 	}
-	
+
 	item.ID = id
 	r.items[id] = item
 
@@ -146,10 +132,7 @@ func (r *MenuRepository) Update(id string, item *models.MenuItem) error {
 	return nil
 }
 
-// TODO: Implement Delete method - Delete menu item
-// - Validate item exists
-// - Remove from memory and file
-// - Log deletion event
+// Delete - removes menu item by ID
 func (r *MenuRepository) Delete(id string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -181,6 +164,7 @@ func (r *MenuRepository) Delete(id string) error {
 	return nil
 }
 
+// GetByID - retrieves menu item by ID
 func (r *MenuRepository) GetByID(id string) (*models.MenuItem, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -208,13 +192,6 @@ func (r *MenuRepository) GetByID(id string) (*models.MenuItem, error) {
 // - Count item frequencies
 // - Return sorted popular items
 // func (r *MenuRepository) GetPopularItems() ([]*models.PopularItemAggregation, error)
-
-// TODO: Implement private helper methods
-// - loadFromFile() error - Load menu items from JSON file
-// - saveToFile() error - Save menu items to JSON file atomically
-// - generateItemID() string - Generate unique item ID
-// - validateMenuItem(item *models.MenuItem) error - Validate item data
-// - backupFile() error - Create backup before updates
 
 func (r *MenuRepository) loadFromFile() error {
 	if err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755); err != nil {
