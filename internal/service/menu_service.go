@@ -27,7 +27,7 @@ type UpdateMenuItemRequest struct {
 
 type MenuServiceInterface interface {
 	GetAllMenuItems() ([]*models.MenuItem, error)
-	GetMenuItem(id string) ()
+	GetMenuItem(id string) (*models.MenuItem, error)
 	CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error)
 	UpdateMenuItem(id string, req UpdateMenuItemRequest) error
 	DeleteMenuItem(id string) error
