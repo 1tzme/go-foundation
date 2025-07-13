@@ -36,16 +36,16 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	}
 	h.logger.LogRequest(reqCtx)
 
-	_, err := h.menuService.GetAllMenuItems()
+	items, err := h.menuService.GetAllMenuItems()
 	if err != nil {
-		// logger err
-		// writeErrorResponse()
+		h.logger.Error("Failed to get all menu items")
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to fetch menu items")
 		reqCtx.StatusCode = http.StatusInternalServerError
 		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	// writeJSONResponse()
+	writeJSONResponse(w, http.StatusOK, items)
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
 }
@@ -66,28 +66,27 @@ func (h *MenuHandler) CreateMenuItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogRequest(reqCtx)
 
 	var createdReq service.CreateMenuItemRequest
-	err := parseRequestBody(r, &createdReq)
-	if err != nil {
-		// logger warn
-		// writeErrorResponse()
+	if err := parseRequestBody(r, &createdReq); err != nil {
+		h.logger.Warn("Invalid request body for create", "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogRequest(reqCtx)
+		h.logger.LogResponse(reqCtx)
 		return
 	}
 
 	newID := generateMenuItemID(createdReq.Name)
-	_, err = h.menuService.CreateMenuItem(newID, createdReq)
+	item, err := h.menuService.CreateMenuItem(newID, createdReq)
 	if err != nil {
-		// logger warn
-		// writeErrorResponse()
+		h.logger.Warn("Failed to create menu item", "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogRequest(reqCtx)
+		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	// writeJSONResponse()
+	writeJSONResponse(w, http.StatusCreated, map[string]interface{}{"id": newID, "message": "Menu item created", "item": item})
 	reqCtx.StatusCode = http.StatusCreated
-	h.logger.LogRequest(reqCtx)
+	h.logger.LogResponse(reqCtx)
 }
 
 // TODO: Implement UpdateMenuItem HTTP handler - PUT /api/v1/menu/{id}
@@ -109,32 +108,30 @@ func (h *MenuHandler) UpdateMenuItem(w http.ResponseWriter, r *http.Request) {
 	id := extractIDFromPath(r)
 
 	updateReq := service.UpdateMenuItemRequest{}
-	err := parseRequestBody(r, &updateReq)
-	if err != nil {
-		// logger warn
-		// writeErrorResponse()
+	if err := parseRequestBody(r, &updateReq); err != nil {
+		h.logger.Warn("Invalid request body", "error", err)
+		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		reqCtx.StatusCode = http.StatusBadRequest
-		h.logger.LogRequest(reqCtx)
+		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	err = h.menuService.UpdateMenuItem(id, updateReq)
-	if err != nil {
-		// logger warn
+	if err := h.menuService.UpdateMenuItem(id, updateReq); err != nil {
+		h.logger.Warn("Failed to update menu item", "id", id, "error", err)
 		if strings.Contains(err.Error(), "not found") {
-			// writeErrorResponse
+			writeErrorResponse(w, http.StatusNotFound, err.Error())
 			reqCtx.StatusCode = http.StatusNotFound
 		} else {
-			// writeErrorResponse
+			writeErrorResponse(w, http.StatusBadRequest, err.Error())
 			reqCtx.StatusCode = http.StatusBadRequest
 		}
 		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	// writeJSONResponse()
+	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Menu item updated"})
 	reqCtx.StatusCode = http.StatusOK
-	h.logger.LogRequest(reqCtx)
+	h.logger.LogResponse(reqCtx)
 }
 
 // TODO: Implement DeleteMenuItem HTTP handler - DELETE /api/v1/menu/{id}
@@ -154,16 +151,15 @@ func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request) {
 
 	id := extractIDFromPath(r)
 
-	err := h.menuService.DeleteMenuItem(id)
-	if err != nil {
-		// logger warn
-		// writeErrorResponse()
+	if err := h.menuService.DeleteMenuItem(id); err != nil {
+		h.logger.Warn("Failed to delete menu item", "id", id, "error", err)
+		writeErrorResponse(w, http.StatusNotFound, "Menu item not found")
 		reqCtx.StatusCode = http.StatusNotFound
 		h.logger.LogResponse(reqCtx)
 		return
 	}
 
-	// writeJSONResponse()
+	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Menu item deleted"})
 	reqCtx.StatusCode = http.StatusOK
 	h.logger.LogResponse(reqCtx)
 }
