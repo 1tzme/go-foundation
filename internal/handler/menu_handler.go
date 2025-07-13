@@ -50,6 +50,30 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 	h.logger.LogResponse(reqCtx)
 }
 
+func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
+	reqCtx := &logger.RequestContext{
+		Method: r.Method,
+		Path: r.URL.Path,
+		RemoteAddr: r.RemoteAddr,
+		StartTime: time.Now(),
+	}
+	h.logger.LogRequest(reqCtx)
+
+	id := extractIDFromPath(r)
+	item, err := h.menuService.GetMenuItem(id)
+	if err != nil {
+		h.logger.Warn("Menu item not found", "id", id, "error", err)
+		writeErrorResponse(w, http.StatusNotFound, "Menu item not found")
+		reqCtx.StatusCode = http.StatusNotFound
+		h.logger.LogResponse(reqCtx)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, item)
+	reqCtx.StatusCode = http.StatusOK
+	h.logger.LogResponse(reqCtx)
+}
+
 // TODO: Implement CreateMenuItem HTTP handler - POST /api/v1/menu
 // - Parse JSON request body
 // - Validate request format
