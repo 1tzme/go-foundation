@@ -253,6 +253,9 @@ func (s *MenuService) validateMenuCategory(category models.MenuCategory) error {
 func (s *MenuService) validateIngredients(ingredients []models.MenuItemIngredient) error {
 	for _, requiredIng := range ingredients {
 		inventoryItem, err := s.inventoryRepo.GetByID(requiredIng.IngredientID)
+func (s *MenuService) validateIngredients(ingredients []models.MenuItemIngredient) error {
+	for _, requiredIng := range ingredients {
+		inventoryItem, err := s.inventoryRepo.GetByID(requiredIng.IngredientID)
 		if err != nil {
 			s.logger.Warn("Validation failed: ingredient not found in inventory", "ingredient_id", requiredIng.IngredientID)
 			return fmt.Errorf("ingredoent with ID %s not found", requiredIng.IngredientID)
@@ -265,5 +268,7 @@ func (s *MenuService) validateIngredients(ingredients []models.MenuItemIngredien
 	}
 	return nil
 }
+
+
 
 
