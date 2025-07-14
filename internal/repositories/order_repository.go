@@ -100,14 +100,10 @@ func (r *OrderRepository) GetByID(id string) (*models.Order, error) {
 
 // GetAll retrieves all orders
 func (r *OrderRepository) GetAll() ([]*models.Order, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
 	if !r.loaded {
-		r.mutex.RUnlock()
-		r.mutex.Lock()
-		defer r.mutex.Unlock()
-		defer r.mutex.RLock()
 		if err := r.loadFromFile(); err != nil {
 			r.logger.Error("Failed to load orders from file", "error", err)
 			return nil, err
