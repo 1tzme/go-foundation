@@ -78,31 +78,20 @@ func main() {
 		"environment", loggerConfig.Environment,
 		"log_level", loggerConfig.Level)
 
-	// Initialize repositories with logger
 	orderRepo := repositories.NewOrderRepository(appLogger)
-	// TODO: Initialize repositories with logger
-	// orderRepo := dal.NewOrderRepository(appLogger)
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
-	// Initialize services with logger
 	orderService := service.NewOrderService(orderRepo, appLogger)
-	// TODO: Initialize services with logger
-	// orderService := service.NewOrderService(orderRepo, inventoryRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
-	// Initialize handlers with logger
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
-	// TODO: Initialize handlers with logger
-	// orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	menuHandler := handler.NewMenuHandler(menuService, appLogger)
 	inventoryHandler := handler.NewInventoryHandler(inventoryService, appLogger)
 
-	// Setup HTTP routes
 	mux := http.NewServeMux()
 
-	// Add API routes
 	api := "/api/v1"
 
 	// Order collection routes: POST (create), GET (all)
@@ -218,16 +207,12 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Create error channel to handle server errors
 	serverErrors := make(chan error, 1)
 
-	// Try to start server, with fallback ports if needed
 	maxRetries := 3
 	for i := 0; i < maxRetries; i++ {
-		// Update server address with current port
 		server.Addr = host + ":" + port
 
-		// Start the server in a goroutine
 		go func() {
 			appLogger.Info("Starting HTTP server",
 				"host", host,
@@ -240,7 +225,6 @@ func main() {
 			}
 		}()
 
-		// Wait a moment to see if the server starts successfully
 		select {
 		case err := <-serverErrors:
 			if strings.Contains(err.Error(), "address already in use") && i < maxRetries-1 {
@@ -256,7 +240,6 @@ func main() {
 			}
 		case <-time.After(200 * time.Millisecond):
 			appLogger.Info("Server started successfully", "port", port)
-			// break
 		}
 
 		break
