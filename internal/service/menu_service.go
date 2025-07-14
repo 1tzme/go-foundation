@@ -35,14 +35,14 @@ type MenuServiceInterface interface {
 }
 
 type MenuService struct {
-	menuRepo  repositories.MenuRepositoryInterface
-	logger    *logger.Logger
+	menuRepo repositories.MenuRepositoryInterface
+	logger   *logger.Logger
 }
 
 func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *MenuService {
 	return &MenuService{
-		menuRepo:  menuRepo,
-		logger:    logger.WithComponent("menu_service"),
+		menuRepo: menuRepo,
+		logger:   logger.WithComponent("menu_service"),
 	}
 }
 
@@ -63,19 +63,19 @@ func (s *MenuService) GetAllMenuItems() ([]*models.MenuItem, error) {
 // CreateMenuItem creates new menu item
 func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error) {
 	s.logger.Info("Creating menu item", "id", id, "name", req.Name, "price", req.Price)
-	
+
 	if err := s.validateCreateMenuItemData(req); err != nil {
 		s.logger.Warn("Create failed: invalid data", "id", id, "error", err)
 		return nil, err
 	}
 
 	item := &models.MenuItem{
-		ID: id,
-		Name: req.Name,
+		ID:          id,
+		Name:        req.Name,
 		Description: req.Description,
-		Category: req.Category,
-		Price: req.Price,
-		Available: req.Available,
+		Category:    req.Category,
+		Price:       req.Price,
+		Available:   req.Available,
 		Ingredients: req.Ingredients,
 	}
 
@@ -91,28 +91,47 @@ func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*mod
 // UpdateMenuItem updates existing menu item
 func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error {
 	s.logger.Info("Updating menu item", "id", id, "name", req.Name, "price", req.Price)
-	
+
 	if err := s.validateUpdateMenuItemData(req); err != nil {
 		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
 		return err
 	}
-
-	if _, err := s.menuRepo.GetByID(id); err != nil {
+	existingItem, err := s.menuRepo.GetByID(id)
+	if err != nil {
 		s.logger.Error("Failed to get existing menu item", "id", id, "error", err)
 		return err
 	}
 
-	item := &models.MenuItem{
-		ID:id,
-		Name: *req.Name,
-		Description: *req.Description,
-		Category: *req.Category,
-		Price: *req.Price,
-		Available: *req.Available,
-		Ingredients: *req.Ingredients,
+	updatedItem := &models.MenuItem{
+		ID:          id,
+		Name:        existingItem.Name,
+		Description: existingItem.Description,
+		Category:    existingItem.Category,
+		Price:       existingItem.Price,
+		Available:   existingItem.Available,
+		Ingredients: existingItem.Ingredients,
 	}
 
-	if err := s.menuRepo.Update(id, item); err != nil {
+	if req.Name != nil {
+		updatedItem.Name = *req.Name
+	}
+	if req.Description != nil {
+		updatedItem.Description = *req.Description
+	}
+	if req.Category != nil {
+		updatedItem.Category = *req.Category
+	}
+	if req.Price != nil {
+		updatedItem.Price = *req.Price
+	}
+	if req.Available != nil {
+		updatedItem.Available = *req.Available
+	}
+	if req.Ingredients != nil {
+		updatedItem.Ingredients = *req.Ingredients
+	}
+
+	if err := s.menuRepo.Update(id, updatedItem); err != nil {
 		s.logger.Error("Failed to update menu item", "id", id, "error", err)
 		return err
 	}
@@ -126,16 +145,16 @@ func (s *MenuService) DeleteMenuItem(id string) error {
 	s.logger.Info("Deleting menu item", "id", id)
 
 	if _, err := s.menuRepo.GetByID(id); err != nil {
-        s.logger.Warn("Menu item not found for deletion", "id", id, "error", err)
+		s.logger.Warn("Menu item not found for deletion", "id", id, "error", err)
 		return err
 	}
 
 	if err := s.menuRepo.Delete(id); err != nil {
-        s.logger.Error("Failed to delete menu item from repository", "id", id, "error", err)
+		s.logger.Error("Failed to delete menu item from repository", "id", id, "error", err)
 		return err
 	}
 
-    s.logger.Info("Menu item deleted successfully", "id", id)
+	s.logger.Info("Menu item deleted successfully", "id", id)
 	return nil
 }
 
@@ -143,11 +162,11 @@ func (s *MenuService) DeleteMenuItem(id string) error {
 func (s *MenuService) GetMenuItem(id string) (*models.MenuItem, error) {
 	item, err := s.menuRepo.GetByID(id)
 	if err != nil {
-        s.logger.Warn("Menu item not found", "id", id, "error", err)
+		s.logger.Warn("Menu item not found", "id", id, "error", err)
 		return nil, err
 	}
 
-    s.logger.Info("Fetched menu item successfully", "id", id, "name", item.Name)
+	s.logger.Info("Fetched menu item successfully", "id", id, "name", item.Name)
 	return item, nil
 }
 
@@ -181,17 +200,21 @@ func (s *MenuService) validateCreateMenuItemData(req CreateMenuItemRequest) erro
 }
 
 func (s *MenuService) validateUpdateMenuItemData(req UpdateMenuItemRequest) error {
-	if *req.Name == "" {
+	if req.Name != nil && *req.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-	if *req.Price < 0 {
+	if req.Price != nil && *req.Price < 0 {
 		return fmt.Errorf("price must be non-negative")
 	}
-	if err := s.validateMenuCategory(*req.Category); err != nil {
-		return err
+	if req.Category != nil {
+		if err := s.validateMenuCategory(*req.Category); err != nil {
+			return err
+		}
 	}
-	if len(*req.Ingredients) == 0 {
-		return fmt.Errorf("menu item must have at least 1 ingredient")
+	if req.Ingredients != nil {
+		if len(*req.Ingredients) == 0 {
+			return fmt.Errorf("menu item must have at least 1 ingredient")
+		}
 	}
 
 	for i, ingredient := range *req.Ingredients {
