@@ -278,14 +278,14 @@ func (r *MenuRepository) validateMenuItem(item *models.MenuItem) error {
 	}
 
 	if len(item.Ingredients) == 0 {
-		return errors.New("menu item must have at least 1 ingridient")
+		return errors.New("menu item must have at least 1 ingredient")
 	}
-	for i, ingridient := range item.Ingredients {
-		if ingridient.IngredientID == "" {
-			return fmt.Errorf("ingridient %d: ID cannot be empty", i+1)
+	for i, ingredient := range item.Ingredients {
+		if ingredient.IngredientID == "" {
+			return fmt.Errorf("ingredient %d: ID cannot be empty", i+1)
 		}
-		if ingridient.Quantity < 0 {
-			return fmt.Errorf("ingridient %d: quantity must be positive", i+1)
+		if ingredient.Quantity < 0 {
+			return fmt.Errorf("ingredient %d: quantity must be positive", i+1)
 		}
 	}
 
