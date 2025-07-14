@@ -80,18 +80,17 @@ func main() {
 
 	// TODO: Initialize repositories with logger
 	// orderRepo := dal.NewOrderRepository(appLogger)
-	// menuRepo := dal.NewMenuRepository(appLogger)
+	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
 	// TODO: Initialize services with logger
 	// orderService := service.NewOrderService(orderRepo, inventoryRepo, appLogger)
-	// menuService := service.NewMenuService(menuRepo, appLogger)
+	menuService := service.NewMenuService(menuRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
 	// TODO: Initialize handlers with logger
 	// orderHandler := handler.NewOrderHandler(orderService, appLogger)
-	// menuHandler := handler.NewMenuHandler(menuService, appLogger)
-
+	menuHandler := handler.NewMenuHandler(menuService, appLogger)
 	inventoryHandler := handler.NewInventoryHandler(inventoryService, appLogger)
 
 	// Setup HTTP routes
@@ -99,6 +98,37 @@ func main() {
 
 	// Add API routes for inventory
 	api := "/api/v1"
+
+	// Menu collection routes: POST (create), GET (all)
+	mux.HandleFunc(api+"/menu", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			menuHandler.CreateMenuItem(w, r)
+			return
+		}
+		if r.Method == http.MethodGet {
+			menuHandler.GetAllMenuItems(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// Menu item routes: GET (by id), PUT (update), DELETE (delete)
+	mux.HandleFunc(api+"/menu/", func(w http.ResponseWriter, r *http.Request) {
+		// /api/v1/menu/{id}
+		if r.Method == http.MethodGet {
+			menuHandler.GetMenuItem(w, r)
+			return
+		}
+		if r.Method == http.MethodPut {
+			menuHandler.UpdateMenuItem(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			menuHandler.DeleteMenuItem(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
 
 	// Inventory collection routes: POST (create), GET (all)
 	mux.HandleFunc(api+"/inventory", func(w http.ResponseWriter, r *http.Request) {
