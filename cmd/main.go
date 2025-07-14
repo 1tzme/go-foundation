@@ -78,16 +78,22 @@ func main() {
 		"environment", loggerConfig.Environment,
 		"log_level", loggerConfig.Level)
 
+	// Initialize repositories with logger
+	orderRepo := repositories.NewOrderRepository(appLogger)
 	// TODO: Initialize repositories with logger
 	// orderRepo := dal.NewOrderRepository(appLogger)
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
+	// Initialize services with logger
+	orderService := service.NewOrderService(orderRepo, appLogger)
 	// TODO: Initialize services with logger
 	// orderService := service.NewOrderService(orderRepo, inventoryRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
+	// Initialize handlers with logger
+	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	// TODO: Initialize handlers with logger
 	// orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	menuHandler := handler.NewMenuHandler(menuService, appLogger)
@@ -96,8 +102,45 @@ func main() {
 	// Setup HTTP routes
 	mux := http.NewServeMux()
 
-	// Add API routes for inventory
+	// Add API routes
 	api := "/api/v1"
+
+	// Order collection routes: POST (create), GET (all)
+	mux.HandleFunc(api+"/orders", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			orderHandler.CreateOrder(w, r)
+			return
+		}
+		if r.Method == http.MethodGet {
+			orderHandler.GetAllOrders(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	// Order item routes: GET (by id), PUT (update), DELETE (delete)
+	mux.HandleFunc(api+"/orders/", func(w http.ResponseWriter, r *http.Request) {
+		// Check if it's a close order request: POST /api/v1/orders/{id}/close
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/close") {
+			orderHandler.CloseOrder(w, r)
+			return
+		}
+
+		// Regular order operations: GET, PUT, DELETE /api/v1/orders/{id}
+		if r.Method == http.MethodGet {
+			orderHandler.GetOrderByID(w, r)
+			return
+		}
+		if r.Method == http.MethodPut {
+			orderHandler.UpdateOrder(w, r)
+			return
+		}
+		if r.Method == http.MethodDelete {
+			orderHandler.DeleteOrder(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
 
 	// Menu collection routes: POST (create), GET (all)
 	mux.HandleFunc(api+"/menu", func(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +188,7 @@ func main() {
 
 	// Inventory item routes: GET (by id), PUT (update), DELETE (delete)
 	mux.HandleFunc(api+"/inventory/", func(w http.ResponseWriter, r *http.Request) {
-		// /api/v1/inventory/{id} or /api/v1/inventory/{id}/quantity
+		// /api/v1/inventory/{id}
 		if r.Method == http.MethodGet {
 			inventoryHandler.GetInventoryItem(w, r)
 			return
