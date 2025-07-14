@@ -135,7 +135,7 @@ func New(config Config) *Logger {
 
 	opts := &slog.HandlerOptions{
 		Level:     level,
-		AddSource: config.EnableCaller,
+		AddSource: false, // We'll handle source manually
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			// Custom attribute replacement for sensitive data
 			if contains(config.SensitiveKeys, strings.ToLower(a.Key)) {
@@ -146,13 +146,6 @@ func New(config Config) *Logger {
 			if a.Key == slog.TimeKey && config.TimeFormat != "" {
 				if t, ok := a.Value.Any().(time.Time); ok {
 					return slog.String(a.Key, t.Format(config.TimeFormat))
-				}
-			}
-
-			// Format source to show only filename without full path
-			if a.Key == slog.SourceKey {
-				if source, ok := a.Value.Any().(*slog.Source); ok {
-					return slog.String(a.Key, fmt.Sprintf("%s:%d", filepath.Base(source.File), source.Line))
 				}
 			}
 
@@ -170,6 +163,11 @@ func New(config Config) *Logger {
 		handler = NewConsoleHandler(output, opts, config.EnableColors)
 	default:
 		handler = slog.NewJSONHandler(output, opts)
+	}
+
+	// Wrap with custom source handler if caller info is enabled
+	if config.EnableCaller {
+		handler = newCustomSourceHandler(handler, 0) // depth is handled inside the custom handler
 	}
 
 	slogLogger := slog.New(handler)
@@ -261,7 +259,7 @@ func (l *Logger) Error(msg string, args ...interface{}) {
 // Fatal logs at error level and exits the program with status code 1
 func (l *Logger) Fatal(msg string, args ...interface{}) {
 	l.Error(msg, args...)
-	
+
 	time.Sleep(100 * time.Millisecond)
 	os.Exit(1)
 }
