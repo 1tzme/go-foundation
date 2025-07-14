@@ -83,7 +83,7 @@ func main() {
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
 	orderService := service.NewOrderService(orderRepo, appLogger)
-	menuService := service.NewMenuService(menuRepo, appLogger)
+	menuService := service.NewMenuService(menuRepo, inventoryRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)

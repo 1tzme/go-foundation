@@ -35,14 +35,16 @@ type MenuServiceInterface interface {
 }
 
 type MenuService struct {
-	menuRepo repositories.MenuRepositoryInterface
-	logger   *logger.Logger
+	menuRepo      repositories.MenuRepositoryInterface
+	inventoryRepo repositories.InventoryRepositoryInterface
+	logger        *logger.Logger
 }
 
-func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *MenuService {
+func NewMenuService(menuRepo repositories.MenuRepositoryInterface, inventoryRepo repositories.InventoryRepositoryInterface, logger *logger.Logger) *MenuService {
 	return &MenuService{
-		menuRepo: menuRepo,
-		logger:   logger.WithComponent("menu_service"),
+		menuRepo:      menuRepo,
+		inventoryRepo: inventoryRepo,
+		logger:        logger.WithComponent("menu_service"),
 	}
 }
 
@@ -69,6 +71,11 @@ func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*mod
 		return nil, err
 	}
 
+	if err := s.validateIngredientsExist(req.Ingredients); err != nil {
+		s.logger.Warn("Ingredient not found in inventory", "id", id)
+		return nil, err
+	}
+
 	item := &models.MenuItem{
 		ID:          id,
 		Name:        req.Name,
@@ -92,13 +99,19 @@ func (s *MenuService) CreateMenuItem(id string, req CreateMenuItemRequest) (*mod
 func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error {
 	s.logger.Info("Updating menu item", "id", id, "name", req.Name, "price", req.Price)
 
-	if err := s.validateUpdateMenuItemData(req); err != nil {
-		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
-		return err
-	}
 	existingItem, err := s.menuRepo.GetByID(id)
 	if err != nil {
 		s.logger.Error("Failed to get existing menu item", "id", id, "error", err)
+		return err
+	}
+
+	if req.Ingredients != nil {
+		if err := s.validateIngredientsExist(*req.Ingredients); err != nil {
+			return err
+		}
+	}
+	if err := s.validateUpdateMenuItemData(req); err != nil {
+		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
 		return err
 	}
 
@@ -236,4 +249,14 @@ func (s *MenuService) validateMenuCategory(category models.MenuCategory) error {
 	default:
 		return fmt.Errorf("invalid menu category: %s", category)
 	}
+}
+
+func (s *MenuService) validateIngredientsExist(ingredients []models.MenuItemIngredient) error {
+	for _, ingredient := range ingredients {
+		_, err := s.inventoryRepo.GetByID(ingredient.IngredientID)
+		if err != nil {
+			return fmt.Errorf("ingredient with ID %s not found", ingredient.IngredientID)
+		}
+	}
+	return nil
 }
