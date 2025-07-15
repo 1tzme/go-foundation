@@ -252,23 +252,16 @@ func (s *MenuService) validateMenuCategory(category models.MenuCategory) error {
 
 func (s *MenuService) validateIngredients(ingredients []models.MenuItemIngredient) error {
 	for _, requiredIng := range ingredients {
-		inventoryItem, err := s.inventoryRepo.GetByID(requiredIng.IngredientID)
-func (s *MenuService) validateIngredients(ingredients []models.MenuItemIngredient) error {
-	for _, requiredIng := range ingredients {
-		inventoryItem, err := s.inventoryRepo.GetByID(requiredIng.IngredientID)
+		_, err := s.inventoryRepo.GetByID(requiredIng.IngredientID)
 		if err != nil {
 			s.logger.Warn("Validation failed: ingredient not found in inventory", "ingredient_id", requiredIng.IngredientID)
 			return fmt.Errorf("ingredoent with ID %s not found", requiredIng.IngredientID)
 		}
 
-		if inventoryItem.Quantity < requiredIng.Quantity {
-			s.logger.Warn("Validation failed: lack of ingredient quantity", "ingredient_id", requiredIng.IngredientID, "required", requiredIng.Quantity, "available", inventoryItem.Quantity)
-			return fmt.Errorf("insufficient quantity for ingredient %s", inventoryItem.Name)
-		}
+		// if inventoryItem.Quantity < requiredIng.Quantity {
+		// 	s.logger.Warn("Validation failed: lack of ingredient quantity", "ingredient_id", requiredIng.IngredientID, "required", requiredIng.Quantity, "available", inventoryItem.Quantity)
+		// 	return fmt.Errorf("insufficient quantity for ingredient %s", inventoryItem.Name)
+		// }
 	}
 	return nil
 }
-
-
-
-
