@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 	"net/http"
@@ -48,10 +49,10 @@ func (h *MenuHandler) GetAllMenuItems(w http.ResponseWriter, r *http.Request) {
 // GetMenuItem handles GET /api/v1/menu/{id}
 func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 	reqCtx := &logger.RequestContext{
-		Method: r.Method,
-		Path: r.URL.Path,
+		Method:     r.Method,
+		Path:       r.URL.Path,
 		RemoteAddr: r.RemoteAddr,
-		StartTime: time.Now(),
+		StartTime:  time.Now(),
 	}
 	h.logger.LogRequest(reqCtx)
 
@@ -59,7 +60,7 @@ func (h *MenuHandler) GetMenuItem(w http.ResponseWriter, r *http.Request) {
 	item, err := h.menuService.GetMenuItem(id)
 	if err != nil {
 		h.logger.Warn("Menu item not found", "id", id, "error", err)
-		writeErrorResponse(w, http.StatusNotFound, "Menu item not found")
+		writeErrorResponse(w, http.StatusNotFound, err.Error())
 		reqCtx.StatusCode = http.StatusNotFound
 		h.logger.LogResponse(reqCtx)
 		return
@@ -157,7 +158,7 @@ func (h *MenuHandler) DeleteMenuItem(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.menuService.DeleteMenuItem(id); err != nil {
 		h.logger.Warn("Failed to delete menu item", "id", id, "error", err)
-		writeErrorResponse(w, http.StatusNotFound, "Menu item not found")
+		writeErrorResponse(w, http.StatusNotFound, err.Error())
 		reqCtx.StatusCode = http.StatusNotFound
 		h.logger.LogResponse(reqCtx)
 		return
