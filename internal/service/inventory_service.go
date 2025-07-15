@@ -60,6 +60,19 @@ func (s *InventoryService) GetInventoryItem(id string) (*models.InventoryItem, e
 // DeleteInventoryItem deletes an inventory item by ID
 func (s *InventoryService) DeleteInventoryItem(id string) error {
 	s.logger.Info("Deleting inventory item", "id", id)
+
+	// Check if ingredient is used in any existing orders
+	if err := s.checkIngredientUsageInOrders(id); err != nil {
+		s.logger.Warn("Cannot delete ingredient: used in orders", "id", id, "error", err)
+		return err
+	}
+
+	// Check if ingredient is used in any menu items
+	if err := s.checkIngredientUsageInMenu(id); err != nil {
+		s.logger.Warn("Cannot delete ingredient: used in menu", "id", id, "error", err)
+		return err
+	}
+
 	if err := s.inventoryRepo.Delete(id); err != nil {
 		s.logger.Warn("Failed to delete inventory item", "id", id, "error", err)
 		return err
@@ -70,13 +83,17 @@ func (s *InventoryService) DeleteInventoryItem(id string) error {
 
 type InventoryService struct {
 	inventoryRepo repositories.InventoryRepositoryInterface
+	orderRepo     repositories.OrderRepositoryInterface
+	menuRepo      repositories.MenuRepositoryInterface
 	logger        *logger.Logger
 }
 
 // NewInventoryService creates a new instance of InventoryService
-func NewInventoryService(inventoryRepo repositories.InventoryRepositoryInterface, logger *logger.Logger) *InventoryService {
+func NewInventoryService(inventoryRepo repositories.InventoryRepositoryInterface, orderRepo repositories.OrderRepositoryInterface, menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *InventoryService {
 	return &InventoryService{
 		inventoryRepo: inventoryRepo,
+		orderRepo:     orderRepo,
+		menuRepo:      menuRepo,
 		logger:        logger.WithComponent("inventory_service"),
 	}
 }
@@ -137,6 +154,55 @@ func validateInventoryItemData(req UpdateInventoryItemRequest) error {
 	}
 	if req.Unit == "" {
 		return fmt.Errorf("unit is required")
+	}
+	return nil
+}
+
+// checkIngredientUsageInOrders checks if an ingredient is used in any existing orders
+func (s *InventoryService) checkIngredientUsageInOrders(ingredientID string) error {
+	orders, err := s.orderRepo.GetAll()
+	if err != nil {
+		return fmt.Errorf("failed to check orders: %v", err)
+	}
+
+	for _, order := range orders {
+		// Only check open orders (not closed orders)
+		if order.Status != "closed" {
+			for _, orderItem := range order.Items {
+				// Get the menu item to check its ingredients
+				menuItem, err := s.menuRepo.GetByID(orderItem.ProductID)
+				if err != nil {
+					// If menu item doesn't exist, skip this order item
+					continue
+				}
+
+				// Check if this ingredient is used in the menu item
+				for _, ingredient := range menuItem.Ingredients {
+					if ingredient.IngredientID == ingredientID {
+						return fmt.Errorf("ingredient '%s' is used in open order '%s' for product '%s'",
+							ingredientID, order.ID, orderItem.ProductID)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// checkIngredientUsageInMenu checks if an ingredient is used in any menu items
+func (s *InventoryService) checkIngredientUsageInMenu(ingredientID string) error {
+	menuItems, err := s.menuRepo.GetAll()
+	if err != nil {
+		return fmt.Errorf("failed to check menu items: %v", err)
+	}
+
+	for _, menuItem := range menuItems {
+		for _, ingredient := range menuItem.Ingredients {
+			if ingredient.IngredientID == ingredientID {
+				return fmt.Errorf("ingredient '%s' is used in menu item '%s' (%s)",
+					ingredientID, menuItem.ID, menuItem.Name)
+			}
+		}
 	}
 	return nil
 }
