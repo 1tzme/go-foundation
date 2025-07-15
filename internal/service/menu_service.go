@@ -31,18 +31,19 @@ type MenuServiceInterface interface {
 	CreateMenuItem(id string, req CreateMenuItemRequest) (*models.MenuItem, error)
 	UpdateMenuItem(id string, req UpdateMenuItemRequest) error
 	DeleteMenuItem(id string) error
-	// GetPopularItems() ([]*models.PopularItemAggregation, error)
 }
 
 type MenuService struct {
-	menuRepo repositories.MenuRepositoryInterface
-	logger   *logger.Logger
+	menuRepo  repositories.MenuRepositoryInterface
+	orderRepo repositories.OrderRepositoryInterface
+	logger    *logger.Logger
 }
 
-func NewMenuService(menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *MenuService {
+func NewMenuService(menuRepo repositories.MenuRepositoryInterface, orderRepo repositories.OrderRepositoryInterface, logger *logger.Logger) *MenuService {
 	return &MenuService{
-		menuRepo: menuRepo,
-		logger:   logger.WithComponent("menu_service"),
+		menuRepo:  menuRepo,
+		orderRepo: orderRepo,
+		logger:    logger.WithComponent("menu_service"),
 	}
 }
 
@@ -96,6 +97,12 @@ func (s *MenuService) UpdateMenuItem(id string, req UpdateMenuItemRequest) error
 		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
 		return err
 	}
+
+	if err := s.checkMenuItemUsageInOrders(id); err != nil {
+		s.logger.Warn("Cannot update menu item: used in orders", "id", id, "error", err)
+		return err
+	}
+
 	existingItem, err := s.menuRepo.GetByID(id)
 	if err != nil {
 		s.logger.Error("Failed to get existing menu item", "id", id, "error", err)
@@ -149,6 +156,11 @@ func (s *MenuService) DeleteMenuItem(id string) error {
 		return err
 	}
 
+	if err := s.checkMenuItemUsageInOrders(id); err != nil {
+		s.logger.Warn("Cannot delete menu item: used in orders", "id", id, "error", err)
+		return err
+	}
+
 	if err := s.menuRepo.Delete(id); err != nil {
 		s.logger.Error("Failed to delete menu item from repository", "id", id, "error", err)
 		return err
@@ -170,12 +182,7 @@ func (s *MenuService) GetMenuItem(id string) (*models.MenuItem, error) {
 	return item, nil
 }
 
-// TODO: Implement GetPopularItems method - Get popular menu items
-// - Call repository for popular items aggregation
-// - Apply business logic for ranking
-// - Log aggregation calculation
-// func (s *MenuService) GetPopularItems() ([]*models.PopularItemAggregation, error)
-
+// checkMenuItemUsageInOrders checks if a menu item is used in any existing orders
 func (s *MenuService) validateCreateMenuItemData(req CreateMenuItemRequest) error {
 	if req.Name == "" {
 		return fmt.Errorf("name is required")
@@ -199,6 +206,7 @@ func (s *MenuService) validateCreateMenuItemData(req CreateMenuItemRequest) erro
 	return nil
 }
 
+// validateUpdateMenuItemData validates the update request for a menu item
 func (s *MenuService) validateUpdateMenuItemData(req UpdateMenuItemRequest) error {
 	if req.Name != nil && *req.Name == "" {
 		return fmt.Errorf("name is required")
@@ -229,6 +237,7 @@ func (s *MenuService) validateUpdateMenuItemData(req UpdateMenuItemRequest) erro
 	return nil
 }
 
+// validateMenuCategory checks if the category is valid
 func (s *MenuService) validateMenuCategory(category models.MenuCategory) error {
 	switch category {
 	case models.CategoryCoffee, models.CategoryDrink, models.CategoryPastry, models.CategorySandwich, models.CategoryTea:
@@ -236,4 +245,25 @@ func (s *MenuService) validateMenuCategory(category models.MenuCategory) error {
 	default:
 		return fmt.Errorf("invalid menu category: %s", category)
 	}
+}
+
+// checkMenuItemUsageInOrders checks if a menu item is used in any existing orders
+func (s *MenuService) checkMenuItemUsageInOrders(menuItemID string) error {
+	orders, err := s.orderRepo.GetAll()
+	if err != nil {
+		return fmt.Errorf("failed to check orders: %v", err)
+	}
+
+	for _, order := range orders {
+		// Only check open orders (not closed orders)
+		if order.Status != "closed" {
+			for _, orderItem := range order.Items {
+				if orderItem.ProductID == menuItemID {
+					return fmt.Errorf("menu item '%s' is used in open order '%s'",
+						menuItemID, order.ID)
+				}
+			}
+		}
+	}
+	return nil
 }
