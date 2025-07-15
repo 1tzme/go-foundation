@@ -40,13 +40,15 @@ type OrderServiceInterface interface {
 // OrderService struct
 type OrderService struct {
 	orderRepo repositories.OrderRepositoryInterface
+	menuRepo  repositories.MenuRepositoryInterface
 	logger    *logger.Logger
 }
 
-// NewOrderService creates a new OrderService with the given repository and logger
-func NewOrderService(orderRepo repositories.OrderRepositoryInterface, logger *logger.Logger) *OrderService {
+// NewOrderService creates a new OrderService with the given repositories and logger
+func NewOrderService(orderRepo repositories.OrderRepositoryInterface, menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *OrderService {
 	return &OrderService{
 		orderRepo: orderRepo,
+		menuRepo:  menuRepo,
 		logger:    logger.WithComponent("order_service"),
 	}
 }
@@ -243,6 +245,10 @@ func (s *OrderService) validateOrderItems(items []CreateOrderItemRequest) error 
 		}
 		if item.Quantity <= 0 {
 			return fmt.Errorf("item %d: quantity must be positive", i+1)
+		}
+		
+		if _, err := s.menuRepo.GetByID(item.ProductID); err != nil {
+			return fmt.Errorf("item %d: product '%s' not found in menu", i+1, item.ProductID)
 		}
 	}
 	return nil

@@ -82,7 +82,7 @@ func main() {
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
-	orderService := service.NewOrderService(orderRepo, appLogger)
+	orderService := service.NewOrderService(orderRepo, menuRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
@@ -146,7 +146,6 @@ func main() {
 
 	// Menu item routes: GET (by id), PUT (update), DELETE (delete)
 	mux.HandleFunc(api+"/menu/", func(w http.ResponseWriter, r *http.Request) {
-		// /api/v1/menu/{id}
 		if r.Method == http.MethodGet {
 			menuHandler.GetMenuItem(w, r)
 			return
