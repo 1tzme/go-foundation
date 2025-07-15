@@ -97,6 +97,7 @@ func main() {
 
 	api := "/api/v1"
 
+	// Aggregation routes: GET total sales, GET popular items
 	mux.HandleFunc(api+"/reports/total-sales", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			aggregationHandler.GetTotalSales(w, r)
@@ -104,7 +105,7 @@ func main() {
 		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
-
+	
 	mux.HandleFunc(api+"/reports/popular-items", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			aggregationHandler.GetPopularItems(w, r)

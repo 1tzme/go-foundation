@@ -27,15 +27,17 @@ func NewAggregationService(aggregationRepo repositories.AggregationRepositoryInt
 }
 
 func (s *AggregationService) GetTotalSales() (*repositories.TotalSales, error) {
+	s.logger.Info("Getting total sales report")
+	
 	orders, err := s.orderRepo.GetAll()
 	if err != nil {
-		// logger err
+		s.logger.Error("Failed to get orders for sales report", "error", err)
 		return nil, err
 	}
 
 	menuItems, err := s.menuRepo.GetAll()
 	if err != nil {
-		// logger err
+		s.logger.Error("Failed to get menu items for sales report", "error", err)
 		return nil, err
 	}
 
@@ -43,15 +45,17 @@ func (s *AggregationService) GetTotalSales() (*repositories.TotalSales, error) {
 }
 
 func (s *AggregationService) GetPopularItems() ([]repositories.PopularItem, error) {
+	s.logger.Info("Getting popular itsme report")
+	
 	orders, err := s.orderRepo.GetAll()
 	if err != nil {
-		// logger err
+		s.logger.Error("Failed to get orders for popular items report", "error", err)
 		return nil, err
 	}
 
 	menuItems, err := s.menuRepo.GetAll()
 	if err != nil {
-		// logger err
+		s.logger.Error("Failed to get menu items for popular items report", "error", err)
 		return nil, err
 	}
 

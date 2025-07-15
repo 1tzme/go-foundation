@@ -38,7 +38,11 @@ func NewAggregationRepository(log *logger.Logger) *AggregationRepository {
 	}
 }
 
+// CalculateTotalSales - retrieves calculated total sales report
 func (r *AggregationRepository) CalculateTotalSales(orders []*models.Order, menuItems []*models.MenuItem) (*TotalSales, error) {
+	r.logger.Info("Calculating total sales from provided data")
+
+	
 	menuMap := make(map[string]*models.MenuItem)
 	for _, item := range menuItems {
 		menuMap[item.ID] = item
@@ -57,7 +61,7 @@ func (r *AggregationRepository) CalculateTotalSales(orders []*models.Order, menu
 		for _, orderItem := range order.Items {
 			menuItem, ok := menuMap[orderItem.ProductID]
 			if !ok {
-				// logger warn
+				r.logger.Warn("Product ID from order not found in menu", "product_id", orderItem.ProductID, "order_id", order.ID)
 				continue
 			}
 
@@ -90,6 +94,8 @@ func (r *AggregationRepository) CalculateTotalSales(orders []*models.Order, menu
 }
 
 func (r *AggregationRepository) CalculatePopularItems(orders []*models.Order, menuItems []*models.MenuItem) ([]PopularItem, error) {
+	r.logger.Info("Calculating popular itsme from closed orders")
+	
 	salesCount := make(map[string]int)
 	for _, order := range orders {
 		if order.Status != "closed" {

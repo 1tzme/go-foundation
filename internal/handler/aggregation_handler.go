@@ -18,10 +18,13 @@ func NewAggregationHandler(s service.AggregationServiceInterface, log *logger.Lo
 	}
 }
 
+// GetTotalSales handles GET /api/v1/reports/total-sales
 func (h *AggregationHandler) GetTotalSales(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Handling get total sales report")
+	
 	report, err := h.aggregationService.GetTotalSales()
 	if err != nil {
-		// logger err
+		h.logger.Error("Failed to get total sales report", "error", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to generate sales report")
 		return
 	}
@@ -29,10 +32,13 @@ func (h *AggregationHandler) GetTotalSales(w http.ResponseWriter, r *http.Reques
 	writeJSONResponse(w, http.StatusOK, report)
 }
 
+// GetPopularItems handles GET /api/v1/reports/popular-items
 func (h *AggregationHandler) GetPopularItems(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Handling get popular items request")
+	
 	report, err := h.aggregationService.GetPopularItems()
 	if err != nil {
-		// logger err
+		h.logger.Error("Failed to get popular items report", "error", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to get popular items")
 		return
 	}
