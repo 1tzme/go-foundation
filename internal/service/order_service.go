@@ -39,17 +39,19 @@ type OrderServiceInterface interface {
 
 // OrderService struct
 type OrderService struct {
-	orderRepo repositories.OrderRepositoryInterface
-	menuRepo  repositories.MenuRepositoryInterface
-	logger    *logger.Logger
+	orderRepo     repositories.OrderRepositoryInterface
+	menuRepo      repositories.MenuRepositoryInterface
+	inventoryRepo repositories.InventoryRepositoryInterface
+	logger        *logger.Logger
 }
 
 // NewOrderService creates a new OrderService with the given repositories and logger
-func NewOrderService(orderRepo repositories.OrderRepositoryInterface, menuRepo repositories.MenuRepositoryInterface, logger *logger.Logger) *OrderService {
+func NewOrderService(orderRepo repositories.OrderRepositoryInterface, menuRepo repositories.MenuRepositoryInterface, inventoryRepo repositories.InventoryRepositoryInterface, logger *logger.Logger) *OrderService {
 	return &OrderService{
-		orderRepo: orderRepo,
-		menuRepo:  menuRepo,
-		logger:    logger.WithComponent("order_service"),
+		orderRepo:     orderRepo,
+		menuRepo:      menuRepo,
+		inventoryRepo: inventoryRepo,
+		logger:        logger.WithComponent("order_service"),
 	}
 }
 
@@ -59,6 +61,12 @@ func (s *OrderService) CreateOrder(req CreateOrderRequest) (*models.Order, error
 
 	if err := s.validateOrderData(req); err != nil {
 		s.logger.Warn("Create failed: invalid data", "error", err)
+		return nil, err
+	}
+
+	// Check inventory availability before creating order
+	if err := s.checkInventoryAvailability(req.Items); err != nil {
+		s.logger.Warn("Create failed: insufficient inventory", "error", err)
 		return nil, err
 	}
 
@@ -79,8 +87,16 @@ func (s *OrderService) CreateOrder(req CreateOrderRequest) (*models.Order, error
 		}
 	}
 
+	// Consume inventory for the order
+	if err := s.consumeInventory(req.Items); err != nil {
+		s.logger.Error("Failed to consume inventory", "order_id", orderID, "error", err)
+		return nil, err
+	}
+
 	if err := s.orderRepo.Add(order); err != nil {
-		s.logger.Error("Failed to add order in repository", "order_id", orderID, "error", err)
+		// Rollback inventory consumption if order creation fails
+		s.logger.Error("Failed to add order, rolling back inventory", "order_id", orderID, "error", err)
+		s.restoreInventory(req.Items)
 		return nil, err
 	}
 
@@ -169,12 +185,36 @@ func (s *OrderService) DeleteOrder(id string) error {
 		return fmt.Errorf("order ID is required")
 	}
 
-	if err := s.orderRepo.Delete(id); err != nil {
-		s.logger.Warn("Failed to delete order", "order_id", id, "error", err)
+	// Get the order before deleting to restore inventory
+	order, err := s.orderRepo.GetByID(id)
+	if err != nil {
+		s.logger.Warn("Order not found for deletion", "order_id", id, "error", err)
 		return err
 	}
 
-	s.logger.Info("Order deleted", "order_id", id)
+	// Convert order items to request format for inventory restoration
+	items := make([]CreateOrderItemRequest, len(order.Items))
+	for i, item := range order.Items {
+		items[i] = CreateOrderItemRequest{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Restore inventory before deleting order
+	if err := s.restoreInventory(items); err != nil {
+		s.logger.Error("Failed to restore inventory", "order_id", id, "error", err)
+		return err
+	}
+
+	if err := s.orderRepo.Delete(id); err != nil {
+		s.logger.Warn("Failed to delete order", "order_id", id, "error", err)
+		// Try to re-consume inventory if delete fails
+		s.consumeInventory(items)
+		return err
+	}
+
+	s.logger.Info("Order deleted and inventory restored", "order_id", id)
 	return nil
 }
 
@@ -246,7 +286,7 @@ func (s *OrderService) validateOrderItems(items []CreateOrderItemRequest) error 
 		if item.Quantity <= 0 {
 			return fmt.Errorf("item %d: quantity must be positive", i+1)
 		}
-		
+
 		if _, err := s.menuRepo.GetByID(item.ProductID); err != nil {
 			return fmt.Errorf("item %d: product '%s' not found in menu", i+1, item.ProductID)
 		}
@@ -282,4 +322,104 @@ func (s *OrderService) generateOrderID() string {
 
 	// Return next sequential order ID
 	return fmt.Sprintf("order%d", maxOrderNum+1)
+}
+
+// checkInventoryAvailability checks if there's enough inventory for all order items
+func (s *OrderService) checkInventoryAvailability(items []CreateOrderItemRequest) error {
+	for i, item := range items {
+		// Get the menu item to find its ingredients
+		menuItem, err := s.menuRepo.GetByID(item.ProductID)
+		if err != nil {
+			return fmt.Errorf("item %d: product '%s' not found in menu", i+1, item.ProductID)
+		}
+
+		// Check each ingredient's availability
+		for _, ingredient := range menuItem.Ingredients {
+			inventoryItem, err := s.inventoryRepo.GetByID(ingredient.IngredientID)
+			if err != nil {
+				return fmt.Errorf("item %d: ingredient '%s' not found in inventory", i+1, ingredient.IngredientID)
+			}
+
+			// Calculate total needed quantity for this ingredient
+			totalNeeded := ingredient.Quantity * float64(item.Quantity)
+
+			if inventoryItem.Quantity < totalNeeded {
+				return fmt.Errorf("item %d: insufficient inventory for ingredient '%s' (need %.2f, have %.2f)",
+					i+1, ingredient.IngredientID, totalNeeded, inventoryItem.Quantity)
+			}
+		}
+	}
+	return nil
+}
+
+// consumeInventory reduces inventory quantities based on order items
+func (s *OrderService) consumeInventory(items []CreateOrderItemRequest) error {
+	for i, item := range items {
+		// Get the menu item to find its ingredients
+		menuItem, err := s.menuRepo.GetByID(item.ProductID)
+		if err != nil {
+			return fmt.Errorf("item %d: product '%s' not found in menu", i+1, item.ProductID)
+		}
+
+		// Consume each ingredient
+		for _, ingredient := range menuItem.Ingredients {
+			inventoryItem, err := s.inventoryRepo.GetByID(ingredient.IngredientID)
+			if err != nil {
+				return fmt.Errorf("item %d: ingredient '%s' not found in inventory", i+1, ingredient.IngredientID)
+			}
+
+			// Calculate consumption amount
+			consumeAmount := ingredient.Quantity * float64(item.Quantity)
+
+			// Update inventory item
+			inventoryItem.Quantity -= consumeAmount
+
+			if err := s.inventoryRepo.Update(ingredient.IngredientID, inventoryItem); err != nil {
+				return fmt.Errorf("item %d: failed to update inventory for ingredient '%s': %v",
+					i+1, ingredient.IngredientID, err)
+			}
+
+			s.logger.Info("Consumed inventory",
+				"ingredient_id", ingredient.IngredientID,
+				"amount", consumeAmount,
+				"remaining", inventoryItem.Quantity)
+		}
+	}
+	return nil
+}
+
+// restoreInventory adds back inventory quantities when order is deleted
+func (s *OrderService) restoreInventory(items []CreateOrderItemRequest) error {
+	for i, item := range items {
+		// Get the menu item to find its ingredients
+		menuItem, err := s.menuRepo.GetByID(item.ProductID)
+		if err != nil {
+			return fmt.Errorf("item %d: product '%s' not found in menu", i+1, item.ProductID)
+		}
+
+		// Restore each ingredient
+		for _, ingredient := range menuItem.Ingredients {
+			inventoryItem, err := s.inventoryRepo.GetByID(ingredient.IngredientID)
+			if err != nil {
+				return fmt.Errorf("item %d: ingredient '%s' not found in inventory", i+1, ingredient.IngredientID)
+			}
+
+			// Calculate restoration amount
+			restoreAmount := ingredient.Quantity * float64(item.Quantity)
+
+			// Update inventory item
+			inventoryItem.Quantity += restoreAmount
+
+			if err := s.inventoryRepo.Update(ingredient.IngredientID, inventoryItem); err != nil {
+				return fmt.Errorf("item %d: failed to update inventory for ingredient '%s': %v",
+					i+1, ingredient.IngredientID, err)
+			}
+
+			s.logger.Info("Restored inventory",
+				"ingredient_id", ingredient.IngredientID,
+				"amount", restoreAmount,
+				"new_total", inventoryItem.Quantity)
+		}
+	}
+	return nil
 }

@@ -82,7 +82,8 @@ func main() {
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
 
-	orderService := service.NewOrderService(orderRepo, menuRepo, appLogger)
+	// Initialize services with logger
+	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 
