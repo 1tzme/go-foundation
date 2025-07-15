@@ -151,12 +151,50 @@ func (s *OrderService) UpdateOrder(id string, req UpdateOrderRequest) error {
 		return err
 	}
 
+	// Get the existing order to restore its inventory first
+	existingOrder, err := s.orderRepo.GetByID(id)
+	if err != nil {
+		s.logger.Warn("Order not found for update", "order_id", id, "error", err)
+		return err
+	}
+
+	// Convert existing order items to request format for inventory restoration
+	existingItems := make([]CreateOrderItemRequest, len(existingOrder.Items))
+	for i, item := range existingOrder.Items {
+		existingItems[i] = CreateOrderItemRequest{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Restore inventory from the existing order
+	if err := s.restoreInventory(existingItems); err != nil {
+		s.logger.Error("Failed to restore inventory from existing order", "order_id", id, "error", err)
+		return err
+	}
+
+	// Check inventory availability for the new order items
+	if err := s.checkInventoryAvailability(req.Items); err != nil {
+		s.logger.Warn("Update failed: insufficient inventory", "order_id", id, "error", err)
+		// Re-consume the original inventory since update failed
+		s.consumeInventory(existingItems)
+		return err
+	}
+
+	// Consume inventory for the new order items
+	if err := s.consumeInventory(req.Items); err != nil {
+		s.logger.Error("Failed to consume inventory for updated order", "order_id", id, "error", err)
+		// Re-consume the original inventory since update failed
+		s.consumeInventory(existingItems)
+		return err
+	}
+
 	order := &models.Order{
 		ID:           id,
 		CustomerName: req.CustomerName,
 		Items:        make([]models.OrderItem, len(req.Items)),
 		Status:       req.Status,
-		CreatedAt:    time.Now().Format(time.RFC3339), // This would normally be preserved from original
+		CreatedAt:    existingOrder.CreatedAt, // Preserve original creation time
 	}
 
 	// Convert request items to order items
@@ -169,10 +207,13 @@ func (s *OrderService) UpdateOrder(id string, req UpdateOrderRequest) error {
 
 	if err := s.orderRepo.Update(id, order); err != nil {
 		s.logger.Error("Failed to update order in repository", "order_id", id, "error", err)
+		// Rollback inventory changes
+		s.restoreInventory(req.Items)
+		s.consumeInventory(existingItems)
 		return err
 	}
 
-	s.logger.Info("Order updated", "order_id", id)
+	s.logger.Info("Order updated with inventory management", "order_id", id)
 	return nil
 }
 
