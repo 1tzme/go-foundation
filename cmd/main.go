@@ -49,7 +49,7 @@ func main() {
 
 	// Initialize services with logger
 	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo, appLogger)
-	menuService := service.NewMenuService(menuRepo, orderRepo, appLogger)
+	menuService := service.NewMenuService(inventoryRepo, menuRepo, orderRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, orderRepo, menuRepo, appLogger)
 	aggregationService := service.NewAggregationService(aggregationRepo, appLogger)
 
