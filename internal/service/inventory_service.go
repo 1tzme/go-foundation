@@ -26,7 +26,7 @@ type InventoryServiceInterface interface {
 // CreateInventoryItem adds a new inventory item
 func (s *InventoryService) CreateInventoryItem(id string, req UpdateInventoryItemRequest) error {
 	s.logger.Info("Creating inventory item", "id", id, "name", req.Name)
-	if err := validateInventoryItemData(req); err != nil {
+	if err := validateCreateInventoryItemData(req); err != nil {
 		s.logger.Warn("Create failed: invalid data", "id", id, "error", err)
 		return err
 	}
@@ -114,8 +114,18 @@ func (s *InventoryService) GetAllInventoryItems() ([]*models.InventoryItem, erro
 func (s *InventoryService) UpdateInventoryItem(id string, req UpdateInventoryItemRequest) error {
 	s.logger.Info("Updating inventory item", "id", id, "name", req.Name)
 
+	existingItem, err := s.inventoryRepo.GetByID(id)
+	if err != nil {
+		s.logger.Warn("Failed to get inventory item for update", "id", id, "error", err)
+		return err
+	}
+
+	if existingItem.Name == req.Name && existingItem.Quantity == float64(req.Quantity) && existingItem.MinThreshold == float64(req.MinThreshold) && existingItem.Unit == req.Unit {
+		s.logger.Warn("Update canceled: no changes detected", "id", id)
+		return fmt.Errorf("no changes detected for inventory item with ID %s", id)
+	}
 	// Validate input
-	if err := validateInventoryItemData(req); err != nil {
+	if err := validateUpdateInventoryItemData(req); err != nil {
 		s.logger.Warn("Update failed: invalid data", "id", id, "error", err)
 		return err
 	}
@@ -129,7 +139,7 @@ func (s *InventoryService) UpdateInventoryItem(id string, req UpdateInventoryIte
 		Unit:         req.Unit,
 	}
 
-	err := s.inventoryRepo.Update(id, item)
+	err = s.inventoryRepo.Update(id, item)
 	if err != nil {
 		s.logger.Error("Failed to update inventory item in repository", "id", id, "error", err)
 		return err
@@ -141,8 +151,25 @@ func (s *InventoryService) UpdateInventoryItem(id string, req UpdateInventoryIte
 
 // Private business logic methods
 
-// validateInventoryItemData validates the data for an inventory item update
-func validateInventoryItemData(req UpdateInventoryItemRequest) error {
+// validateCreateInventoryItemData validates data for creation
+func validateCreateInventoryItemData(req UpdateInventoryItemRequest) error {
+	if req.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+	if req.Quantity <= 0 {
+		return fmt.Errorf("quantity must be non-negative")
+	}
+	if req.MinThreshold < 0 {
+		return fmt.Errorf("minimum threshold must be non-negative")
+	}
+	if req.Unit == "" {
+		return fmt.Errorf("unit is required")
+	}
+	return nil
+}
+
+// validateUpdateInventoryItemData validates data for update
+func validateUpdateInventoryItemData(req UpdateInventoryItemRequest) error {
 	if req.Name == "" {
 		return fmt.Errorf("name is required")
 	}
@@ -157,6 +184,7 @@ func validateInventoryItemData(req UpdateInventoryItemRequest) error {
 	}
 	return nil
 }
+
 
 // checkIngredientUsageInOrders checks if an ingredient is used in any existing orders
 func (s *InventoryService) checkIngredientUsageInOrders(ingredientID string) error {

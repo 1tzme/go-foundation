@@ -81,19 +81,42 @@ func main() {
 	orderRepo := repositories.NewOrderRepository(appLogger)
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
+	aggregationRepo := repositories.NewAggregationRepository(orderRepo, menuRepo, appLogger)
 
 	// Initialize services with logger
 	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, orderRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, orderRepo, menuRepo, appLogger)
+	orderService := service.NewOrderService(orderRepo, appLogger)
+	menuService := service.NewMenuService(menuRepo, inventoryRepo, appLogger)
+	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
+	aggregationService := service.NewAggregationService(aggregationRepo, appLogger)
 
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	menuHandler := handler.NewMenuHandler(menuService, appLogger)
 	inventoryHandler := handler.NewInventoryHandler(inventoryService, appLogger)
+	aggregationHandler := handler.NewAggregationHandler(aggregationService, appLogger)
 
 	mux := http.NewServeMux()
 
 	api := "/api/v1"
+
+	// Aggregation routes: GET total sales, GET popular items
+	mux.HandleFunc(api+"/reports/total-sales", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			aggregationHandler.GetTotalSales(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
+
+	mux.HandleFunc(api+"/reports/popular-items", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			aggregationHandler.GetPopularItems(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
 
 	// Order collection routes: POST (create), GET (all)
 	mux.HandleFunc(api+"/orders", func(w http.ResponseWriter, r *http.Request) {

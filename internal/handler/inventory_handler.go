@@ -96,8 +96,8 @@ func (h *InventoryHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Inventory item deleted"})
-	reqCtx.StatusCode = http.StatusOK
+	writeJSONResponse(w, http.StatusNoContent, nil)
+	reqCtx.StatusCode = http.StatusNoContent
 	h.logger.LogResponse(reqCtx)
 }
 

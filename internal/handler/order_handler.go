@@ -185,8 +185,8 @@ func (h *OrderHandler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.writeJSONResponse(w, http.StatusOK, map[string]interface{}{"id": id, "message": "Order deleted"})
-	reqCtx.StatusCode = http.StatusOK
+	h.writeJSONResponse(w, http.StatusNoContent, map[string]interface{}{"id": id, "message": "Order deleted"})
+	reqCtx.StatusCode = http.StatusNoContent
 	h.logger.LogResponse(reqCtx)
 }
 
