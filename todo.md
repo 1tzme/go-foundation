@@ -4,3 +4,4 @@
 - [] create .json file on run
 - [] restric edit closed orders
 - [] identify JSON in Postman
+- [] prevent unneeded fields for Postman's JSON request
