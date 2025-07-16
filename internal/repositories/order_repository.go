@@ -32,12 +32,12 @@ type OrderRepository struct {
 	loaded       bool
 }
 
-// NewOrderRepository creates a new OrderRepository with the given logger
-func NewOrderRepository(logger *logger.Logger) *OrderRepository {
+// NewOrderRepository creates a new OrderRepository with the given logger and data directory
+func NewOrderRepository(logger *logger.Logger, dataDir string) *OrderRepository {
 	return &OrderRepository{
 		orders:       make(map[string]*models.Order),
 		logger:       logger.WithComponent("order_repository"),
-		dataFilePath: "./data/orders.json",
+		dataFilePath: filepath.Join(dataDir, "orders.json"),
 		loaded:       false,
 	}
 }

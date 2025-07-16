@@ -119,11 +119,11 @@ type InventoryRepository struct {
 	loaded       bool
 }
 
-func NewInventoryRepository(logger *logger.Logger) *InventoryRepository {
+func NewInventoryRepository(logger *logger.Logger, dataDir string) *InventoryRepository {
 	return &InventoryRepository{
 		items:        make(map[string]*models.InventoryItem),
 		logger:       logger.WithComponent("inventory_repository"),
-		dataFilePath: "./data/inventory.json",
+		dataFilePath: filepath.Join(dataDir, "inventory.json"),
 		loaded:       false,
 	}
 }

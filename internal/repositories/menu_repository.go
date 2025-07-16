@@ -29,11 +29,11 @@ type MenuRepository struct {
 	loaded       bool
 }
 
-func NewMenuRepository(logger *logger.Logger) *MenuRepository {
+func NewMenuRepository(logger *logger.Logger, dataDir string) *MenuRepository {
 	return &MenuRepository{
 		items:        make(map[string]*models.MenuItem),
 		logger:       logger.WithComponent("menu_repository"),
-		dataFilePath: "./data/menu_items.json",
+		dataFilePath: filepath.Join(dataDir, "menu_items.json"),
 		loaded:       false,
 	}
 }
