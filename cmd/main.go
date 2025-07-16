@@ -87,9 +87,6 @@ func main() {
 	orderService := service.NewOrderService(orderRepo, menuRepo, inventoryRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, orderRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, orderRepo, menuRepo, appLogger)
-	orderService := service.NewOrderService(orderRepo, appLogger)
-	menuService := service.NewMenuService(menuRepo, inventoryRepo, appLogger)
-	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
 	aggregationService := service.NewAggregationService(aggregationRepo, appLogger)
 
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)

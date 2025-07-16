@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
 	"net/http"
