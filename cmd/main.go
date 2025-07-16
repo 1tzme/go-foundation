@@ -81,12 +81,12 @@ func main() {
 	orderRepo := repositories.NewOrderRepository(appLogger)
 	menuRepo := repositories.NewMenuRepository(appLogger)
 	inventoryRepo := repositories.NewInventoryRepository(appLogger)
-	aggregationRepo := repositories.NewAggregationRepository(appLogger)
+	aggregationRepo := repositories.NewAggregationRepository(orderRepo, menuRepo, appLogger)
 
 	orderService := service.NewOrderService(orderRepo, appLogger)
 	menuService := service.NewMenuService(menuRepo, inventoryRepo, appLogger)
 	inventoryService := service.NewInventoryService(inventoryRepo, appLogger)
-	aggregationService := service.NewAggregationService(aggregationRepo, orderRepo, menuRepo, appLogger)
+	aggregationService := service.NewAggregationService(aggregationRepo, appLogger)
 
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 	menuHandler := handler.NewMenuHandler(menuService, appLogger)
@@ -105,7 +105,7 @@ func main() {
 		}
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
-	
+
 	mux.HandleFunc(api+"/reports/popular-items", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			aggregationHandler.GetPopularItems(w, r)
