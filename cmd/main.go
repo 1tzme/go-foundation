@@ -11,11 +11,21 @@ import (
 	"hot-coffee/internal/router"
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/envconfig"
+	"hot-coffee/pkg/flags"
 	"hot-coffee/pkg/logger"
 	"hot-coffee/pkg/shutdownsetup"
 )
 
 func main() {
+	// Parse command-line flags
+	flagConfig := flags.Parse()
+
+	// Validate flag configuration
+	if err := flagConfig.Validate(); err != nil {
+		fmt.Printf("Configuration error: %v\n", err)
+		return
+	}
+
 	envErr := envconfig.LoadEnvFile(".env")
 
 	loggerConfig := logger.Config{
@@ -41,10 +51,10 @@ func main() {
 		"environment", loggerConfig.Environment,
 		"log_level", loggerConfig.Level)
 
-	// Initialize repositories with logger
-	orderRepo := repositories.NewOrderRepository(appLogger)
-	menuRepo := repositories.NewMenuRepository(appLogger)
-	inventoryRepo := repositories.NewInventoryRepository(appLogger)
+	// Initialize repositories with logger and data directory from flags
+	orderRepo := repositories.NewOrderRepository(appLogger, flagConfig.DataDir)
+	menuRepo := repositories.NewMenuRepository(appLogger, flagConfig.DataDir)
+	inventoryRepo := repositories.NewInventoryRepository(appLogger, flagConfig.DataDir)
 	aggregationRepo := repositories.NewAggregationRepository(orderRepo, menuRepo, appLogger)
 
 	// Initialize services with logger
@@ -63,7 +73,10 @@ func main() {
 
 	handler := appLogger.HTTPMiddleware(mux)
 
-	initialPort := envconfig.GetEnv("PORT", "8080")
+	initialPort := flagConfig.Port
+	if initialPort == "" {
+		initialPort = envconfig.GetEnv("PORT", "8080")
+	}
 	host := envconfig.GetEnv("HOST", "localhost")
 
 	port := initialPort
