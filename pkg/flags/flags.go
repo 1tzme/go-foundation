@@ -82,7 +82,7 @@ func validateDataDir(dir string) string {
 	}
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(absDir, 0755); err != nil {
+	if err := os.MkdirAll(absDir, 0o755); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Cannot create data directory: %v\n", err)
 		os.Exit(1)
 	}

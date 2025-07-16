@@ -1,10 +1,11 @@
 package service
 
 import (
+	"sort"
+
 	"hot-coffee/internal/repositories"
 	"hot-coffee/models"
 	"hot-coffee/pkg/logger"
-	"sort"
 )
 
 type TotalSales struct {

@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"hot-coffee/internal/service"
 	"hot-coffee/pkg/logger"
-	"net/http"
 )
 
 type AggregationHandler struct {
@@ -21,7 +22,7 @@ func NewAggregationHandler(s service.AggregationServiceInterface, log *logger.Lo
 // GetTotalSales handles GET /api/v1/reports/total-sales
 func (h *AggregationHandler) GetTotalSales(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Handling get total sales report")
-	
+
 	report, err := h.aggregationService.GetTotalSales()
 	if err != nil {
 		h.logger.Error("Failed to get total sales report", "error", err)
@@ -35,7 +36,7 @@ func (h *AggregationHandler) GetTotalSales(w http.ResponseWriter, r *http.Reques
 // GetPopularItems handles GET /api/v1/reports/popular-items
 func (h *AggregationHandler) GetPopularItems(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Handling get popular items request")
-	
+
 	report, err := h.aggregationService.GetPopularItems()
 	if err != nil {
 		h.logger.Error("Failed to get popular items report", "error", err)

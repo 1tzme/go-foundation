@@ -1,9 +1,10 @@
 package router
 
 import (
-	"hot-coffee/internal/handler"
 	"net/http"
 	"strings"
+
+	"hot-coffee/internal/handler"
 )
 
 func NewRouter(orderHandler *handler.OrderHandler, menuHandler *handler.MenuHandler, inventoryHandler *handler.InventoryHandler, aggregationHandler *handler.AggregationHandler) *http.ServeMux {

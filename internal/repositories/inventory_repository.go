@@ -11,13 +11,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hot-coffee/models"
-	"hot-coffee/pkg/logger"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"hot-coffee/models"
+	"hot-coffee/pkg/logger"
 )
 
 // TODO: Implement InventoryRepository interface
@@ -193,7 +194,7 @@ func (r *InventoryRepository) Update(id string, item *models.InventoryItem) erro
 }
 
 func (r *InventoryRepository) loadFromFile() error {
-	err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
+	err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0o755)
 	if err != nil {
 		return err
 	}
@@ -247,13 +248,13 @@ func (r *InventoryRepository) saveToFile() error {
 		return fmt.Errorf("failed to marshal inventory data: %v", err)
 	}
 
-	err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0755)
+	err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0o755)
 	if err != nil {
 		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
 	tempFile := r.dataFilePath + ".tmp"
-	err = os.WriteFile(tempFile, data, 0644)
+	err = os.WriteFile(tempFile, data, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write temporary inventory file: %v", err)
 	}
@@ -299,7 +300,7 @@ func (r *InventoryRepository) backupFile() error {
 		return fmt.Errorf("failed to read original file: %v", err)
 	}
 
-	err = os.WriteFile(backupPath, data, 0644)
+	err = os.WriteFile(backupPath, data, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to create backup file, %v", err)
 	}

@@ -2,9 +2,10 @@ package envconfig
 
 import (
 	"bufio"
-	"hot-coffee/pkg/logger"
 	"os"
 	"strings"
+
+	"hot-coffee/pkg/logger"
 )
 
 // LoadEnvFile loads environment variables from .env file

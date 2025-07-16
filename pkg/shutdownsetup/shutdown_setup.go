@@ -2,12 +2,13 @@ package shutdownsetup
 
 import (
 	"context"
-	"hot-coffee/pkg/logger"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"hot-coffee/pkg/logger"
 )
 
 // SetupGracefulShutdown handles graceful server shutdown

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hot-coffee/models"
-	"hot-coffee/pkg/logger"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"hot-coffee/models"
+	"hot-coffee/pkg/logger"
 )
 
 type MenuRepositoryInterface interface {
@@ -194,7 +195,7 @@ func (r *MenuRepository) GetByID(id string) (*models.MenuItem, error) {
 // func (r *MenuRepository) GetPopularItems() ([]*models.PopularItemAggregation, error)
 
 func (r *MenuRepository) loadFromFile() error {
-	if err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(r.dataFilePath), 0o755); err != nil {
 		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
@@ -246,12 +247,12 @@ func (r *MenuRepository) saveToFile() error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal menu items: %v", err)
 	}
-	if err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Dir(r.dataFilePath), 0o755); err != nil {
 		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
 	tempFile := r.dataFilePath + ".tmp"
-	if err = os.WriteFile(tempFile, data, 0644); err != nil {
+	if err = os.WriteFile(tempFile, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write temporary menu items file: %v", err)
 	}
 
@@ -303,7 +304,7 @@ func (r *MenuRepository) backupFile() error {
 	if err != nil {
 		return fmt.Errorf("failed to read original file: %v", err)
 	}
-	if err = os.WriteFile(backupPath, data, 0644); err != nil {
+	if err = os.WriteFile(backupPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to create backup file, %v", err)
 	}
 

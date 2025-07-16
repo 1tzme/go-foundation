@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+
 	"hot-coffee/internal/repositories"
 	"hot-coffee/models"
 	"hot-coffee/pkg/logger"
@@ -184,7 +185,6 @@ func validateUpdateInventoryItemData(req UpdateInventoryItemRequest) error {
 	}
 	return nil
 }
-
 
 // checkIngredientUsageInOrders checks if an ingredient is used in any existing orders
 func (s *InventoryService) checkIngredientUsageInOrders(ingredientID string) error {

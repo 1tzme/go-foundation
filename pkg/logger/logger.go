@@ -126,7 +126,7 @@ func New(config Config) *Logger {
 		output = os.Stderr
 	default:
 		// File output
-		if file, err := os.OpenFile(config.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666); err == nil {
+		if file, err := os.OpenFile(config.Output, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666); err == nil {
 			output = file
 		} else {
 			output = os.Stdout // Fallback to stdout
