@@ -3,13 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"hot-coffee/internal/service"
+	"hot-coffee/pkg/logger"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-
-	"hot-coffee/internal/service"
-	"hot-coffee/pkg/logger"
 )
 
 // OrderHandler struct
@@ -252,6 +251,7 @@ func (h *OrderHandler) writeErrorResponse(w http.ResponseWriter, statusCode int,
 func (h *OrderHandler) parseRequestBody(r *http.Request, target interface{}) error {
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 	return decoder.Decode(target)
 }
 

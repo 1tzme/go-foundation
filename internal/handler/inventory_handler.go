@@ -195,6 +195,7 @@ func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 func parseRequestBody(r *http.Request, target interface{}) error {
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 	return decoder.Decode(target)
 }
 
