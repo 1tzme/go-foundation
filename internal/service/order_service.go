@@ -158,6 +158,11 @@ func (s *OrderService) UpdateOrder(id string, req UpdateOrderRequest) error {
 		return err
 	}
 
+	if existingOrder.Status == "closed" {
+		s.logger.Warn("Attempted to update a closed order", "order_id", id)
+		return fmt.Errorf("cannot update closed order")
+	}
+
 	// Convert existing order items to request format for inventory restoration
 	existingItems := make([]CreateOrderItemRequest, len(existingOrder.Items))
 	for i, item := range existingOrder.Items {
