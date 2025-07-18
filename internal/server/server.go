@@ -83,7 +83,7 @@ func (s *Server) handleRequest(conn *net.UDPConn, clientAddr *net.UDPAddr, messa
 
 func (s *Server) expiredKeysCleanup() {
 	ticker := time.NewTicker(1 * time.Second)
-	go func ()  {
+	go func() {
 		for range ticker.C {
 			now := time.Now()
 			s.mu.Lock()
