@@ -23,6 +23,7 @@ func FlagInit() int {
 
 	if *port < 1 || *port > 65535 {
 		fmt.Fprintf(os.Stderr, "Error: Port number %d is out of valid range\n", *port)
+		os.Exit(1)
 	}
 
 	return *port
