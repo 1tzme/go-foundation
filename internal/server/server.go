@@ -39,7 +39,7 @@ func (s *Server) Start() error {
 	defer conn.Close()
 
 	buffer := make([]byte, 4096)
-	fmt.Printf("Server listening on %s\n", conn.LocalAddr().String())
+	fmt.Printf("Server listening on %s\n", addr)
 
 	s.expiredKeysCleanup()
 
@@ -76,8 +76,7 @@ func (s *Server) handleRequest(conn *net.UDPConn, clientAddr *net.UDPAddr, messa
 		}
 	}
 
-	_, err := conn.WriteToUDP([]byte(response), clientAddr)
-	if err != nil {
+	if _, err := conn.WriteToUDP([]byte(response+"\n"), clientAddr); err != nil {
 		fmt.Printf("Error sending response to %v: %v\n", clientAddr, err)
 	}
 }
