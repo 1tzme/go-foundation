@@ -1,0 +1,30 @@
+package main
+
+import (
+	"creditcard/features"
+	"fmt"
+	"os"
+)
+
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Missing command")
+		os.Exit(1)
+	}
+
+	command := os.Args[1]
+	args := os.Args[2:]
+
+	switch command {
+	case "validate":
+		features.Validate(args)
+	case "generate":
+		features.Generate(args)
+	case "information":
+		features.Information(args)
+	case "issue":
+		features.Issue(args)
+	default:
+		fmt.Println("Unknown comman: ", command)
+	}
+}
